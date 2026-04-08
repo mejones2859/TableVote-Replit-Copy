@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TableVote – Group Restaurant Decision App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'Georgia', 'serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --primary: hsl(16, 85%, 58%);
+      --primary-light: hsl(16, 70%, 95%);
+      --primary-fg: #fff;
+      --background: hsl(0, 0%, 98%);
+      --foreground: hsl(240, 10%, 10%);
+      --border: hsl(240, 6%, 90%);
+      --card: hsl(0, 0%, 100%);
+      --card-fg: hsl(240, 10%, 10%);
+      --muted: hsl(240, 5%, 96%);
+      --muted-fg: hsl(240, 5%, 45%);
+      --secondary: hsl(240, 5%, 94%);
+      --secondary-fg: hsl(240, 10%, 25%);
+      --accent: hsl(16, 70%, 95%);
+      --accent-fg: hsl(16, 85%, 40%);
+      --destructive: hsl(0, 84%, 60%);
+    }
+    body { background: var(--background); color: var(--foreground); font-family: 'Inter', sans-serif; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .gradient-text {
+      background: linear-gradient(to right, hsl(16,85%,58%), hsl(25,85%,55%), hsl(45,93%,45%));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-fg);
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1.25rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: opacity 0.15s;
+      font-size: 0.875rem;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-outline {
+      background: transparent;
+      color: var(--foreground);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 1.25rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.15s;
+      font-size: 0.875rem;
+    }
+    .btn-outline:hover { background: var(--muted); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--foreground);
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.15s;
+      font-size: 0.875rem;
+    }
+    .btn-ghost:hover { background: var(--muted); }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      gap: 0.25rem;
+    }
+    .badge-default { background: var(--primary); color: var(--primary-fg); }
+    .badge-outline { border: 1px solid var(--border); color: var(--foreground); }
+    .badge-secondary { background: var(--secondary); color: var(--secondary-fg); }
+    .progress-bar { background: var(--muted); border-radius: 999px; height: 8px; overflow: hidden; }
+    .progress-fill { background: var(--primary); height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+    .nav { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+    .logo-icon { height: 36px; width: 36px; border-radius: 6px; background: var(--primary); display: flex; align-items: center; justify-content: center; }
+    .logo-icon-sm { height: 32px; width: 32px; border-radius: 6px; background: var(--primary); display: flex; align-items: center; justify-content: center; }
+    .input {
+      width: 100%; border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.5rem 0.75rem; font-size: 0.875rem; outline: none;
+      background: white; color: var(--foreground);
+      transition: border-color 0.15s;
+    }
+    .input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px hsla(16,85%,58%,0.15); }
+    .cuisine-badge {
+      cursor: pointer; border: 1px solid var(--border); border-radius: 999px;
+      padding: 0.4rem 1rem; font-size: 0.875rem; font-weight: 500;
+      transition: all 0.15s; user-select: none;
+    }
+    .cuisine-badge:hover { background: var(--muted); }
+    .cuisine-badge.selected { background: var(--primary); color: white; border-color: var(--primary); }
+    .price-card { border: 1px solid var(--border); border-radius: 9px; padding: 1rem; text-align: center; cursor: pointer; transition: all 0.15s; }
+    .price-card:hover { background: var(--muted); }
+    .price-card.selected { box-shadow: 0 0 0 2px var(--primary); background: hsla(16,85%,58%,0.05); }
+    .restaurant-card { border: 1px solid var(--border); border-radius: 9px; overflow: hidden; transition: box-shadow 0.15s; cursor: pointer; background: white; }
+    .restaurant-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .restaurant-card.top-pick { box-shadow: 0 0 0 2px var(--primary); }
+    .spinner { border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .vote-card { border: 1px solid var(--border); border-radius: 9px; overflow: hidden; background: white; cursor: pointer; transition: all 0.15s; }
+    .vote-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .vote-card.selected { box-shadow: 0 0 0 2px var(--primary); }
+    .nav-demo-bar {
+      background: hsl(16,70%,95%); border-bottom: 1px solid hsl(16,50%,85%);
+      padding: 0.5rem 1rem; font-size: 0.8rem; color: hsl(16,85%,35%);
+      display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center;
+    }
+    .nav-demo-btn { cursor: pointer; font-weight: 500; text-decoration: underline; }
+    .nav-demo-btn:hover { color: var(--primary); }
+    .nav-demo-btn.current { color: var(--primary); text-decoration: none; font-weight: 700; }
+    .food-spinner-ring {
+      width: 160px; height: 160px; border-radius: 50%; border: 2px dashed hsl(16,50%,75%);
+      position: relative; margin: 0 auto;
+      animation: spin 8s linear infinite;
+    }
+    .food-icon { position: absolute; font-size: 1.5rem; }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+    .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+    .ring-winner { box-shadow: 0 0 0 4px var(--primary), 0 4px 16px rgba(0,0,0,0.12) !important; }
+    label { font-size: 0.875rem; font-weight: 500; color: var(--foreground); display: block; margin-bottom: 0.4rem; }
+    .slider { width: 100%; accent-color: var(--primary); }
+    .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+    .step-dot.active { background: var(--primary); }
+    .step-dot.done { background: hsl(16,60%,75%); }
+    .confetti { font-size: 2.5rem; animation: pulse 1.5s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+
+<!-- Demo Navigation Bar -->
+<div class="nav-demo-bar">
+  <span style="font-weight:600;">TableVote Preview:</span>
+  <span class="nav-demo-btn current" id="nav-landing" onclick="goTo('landing')">Landing</span>
+  <span class="nav-demo-btn" id="nav-home" onclick="goTo('home')">Home</span>
+  <span class="nav-demo-btn" id="nav-preferences" onclick="goTo('preferences')">Preferences</span>
+  <span class="nav-demo-btn" id="nav-waiting" onclick="goTo('waiting')">Waiting Room</span>
+  <span class="nav-demo-btn" id="nav-results" onclick="goTo('results')">Results</span>
+  <span class="nav-demo-btn" id="nav-vote" onclick="goTo('vote')">Vote</span>
+  <span class="nav-demo-btn" id="nav-randomizer" onclick="goTo('randomizer')">Randomizer</span>
+  <span class="nav-demo-btn" id="nav-decision" onclick="goTo('decision')">Decision</span>
+</div>
+
+<!-- ===================== LANDING PAGE ===================== -->
+<div class="page active" id="page-landing">
+  <nav class="nav">
+    <div style="max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon">
+          <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+        </div>
+        <span style="font-size:1.2rem;font-weight:700;">TableVote</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <a style="font-size:0.875rem;color:var(--muted-fg);cursor:pointer;">Features</a>
+        <a style="font-size:0.875rem;color:var(--muted-fg);cursor:pointer;">How It Works</a>
+      </div>
+      <button class="btn-primary" onclick="goTo('home')">Get Started</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section style="padding:8rem 1.5rem 5rem;">
+    <div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.5rem 1rem;border-radius:999px;background:var(--accent);color:var(--accent-fg);font-size:0.875rem;font-weight:500;margin-bottom:1.5rem;">
+          ✨ No more endless "where do you want to eat?" debates
+        </div>
+        <h1 style="font-family:'Playfair Display',serif;font-size:3.5rem;font-weight:700;line-height:1.15;margin-bottom:1.25rem;">
+          Group Dining Decisions,<br><span class="gradient-text">Simplified</span>
+        </h1>
+        <p style="font-size:1.1rem;color:var(--muted-fg);max-width:480px;margin-bottom:2rem;line-height:1.7;">
+          TableVote combines everyone's food preferences, dietary needs, and location to find the perfect restaurant that makes your whole group happy.
+        </p>
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+          <button class="btn-primary" style="font-size:1rem;padding:0.75rem 1.75rem;" onclick="goTo('home')">
+            Start a Group <span>→</span>
+          </button>
+          <button class="btn-outline" style="font-size:1rem;padding:0.75rem 1.75rem;" onclick="goTo('home')">
+            Join with Code
+          </button>
+        </div>
+        <div style="display:flex;gap:1.5rem;font-size:0.875rem;color:var(--muted-fg);">
+          <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> Free forever</span>
+          <span style="display:flex;align-items:center;gap:0.4rem;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span> No credit card required</span>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="padding:1.5rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <h3 style="font-weight:600;font-size:1.1rem;">Top Matches for Your Group</h3>
+            <span style="color:var(--primary);font-size:0.875rem;font-weight:500;display:flex;align-items:center;gap:0.25rem;">⭐ Best Fit</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.75rem;">
+            <div class="restaurant-card top-pick" style="position:relative;">
+              <div style="display:flex;align-items:center;gap:1rem;padding:1rem;">
+                <div style="width:48px;height:48px;border-radius:6px;background:linear-gradient(135deg,hsla(16,85%,58%,0.2),hsla(25,85%,55%,0.2));display:flex;align-items:center;justify-content:center;">🍝</div>
+                <div style="flex:1;">
+                  <p style="font-weight:500;">Bella Italia</p>
+                  <p style="font-size:0.8rem;color:var(--muted-fg);">Italian • $$</p>
+                </div>
+                <div style="text-align:right;">
+                  <p style="font-size:0.875rem;font-weight:500;">⭐ 4.8</p>
+                  <p style="font-size:0.75rem;color:var(--muted-fg);">0.8 mi</p>
+                </div>
+              </div>
+            </div>
+            <div class="restaurant-card top-pick">
+              <div style="display:flex;align-items:center;gap:1rem;padding:1rem;">
+                <div style="width:48px;height:48px;border-radius:6px;background:linear-gradient(135deg,hsla(16,85%,58%,0.2),hsla(25,85%,55%,0.2));display:flex;align-items:center;justify-content:center;">🍣</div>
+                <div style="flex:1;">
+                  <p style="font-weight:500;">Sakura Sushi</p>
+                  <p style="font-size:0.8rem;color:var(--muted-fg);">Japanese • $$$</p>
+                </div>
+                <div style="text-align:right;">
+                  <p style="font-size:0.875rem;font-weight:500;">⭐ 4.6</p>
+                  <p style="font-size:0.75rem;color:var(--muted-fg);">1.2 mi</p>
+                </div>
+              </div>
+            </div>
+            <div class="restaurant-card">
+              <div style="display:flex;align-items:center;gap:1rem;padding:1rem;">
+                <div style="width:48px;height:48px;border-radius:6px;background:linear-gradient(135deg,hsla(16,85%,58%,0.2),hsla(25,85%,55%,0.2));display:flex;align-items:center;justify-content:center;">🌮</div>
+                <div style="flex:1;">
+                  <p style="font-weight:500;">Taco Haven</p>
+                  <p style="font-size:0.8rem;color:var(--muted-fg);">Mexican • $</p>
+                </div>
+                <div style="text-align:right;">
+                  <p style="font-size:0.875rem;font-weight:500;">⭐ 4.5</p>
+                  <p style="font-size:0.75rem;color:var(--muted-fg);">0.5 mi</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" style="padding:5rem 1.5rem;background:var(--muted);">
+    <div style="max-width:1280px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:3rem;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:2.25rem;font-weight:700;margin-bottom:1rem;">Everything You Need to Decide</h2>
+        <p style="color:var(--muted-fg);font-size:1.05rem;max-width:500px;margin:0 auto;">From preferences to final pick, TableVote makes group dining decisions quick and fun.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;">
+        <div class="card" style="padding:1.5rem;">
+          <div style="width:48px;height:48px;border-radius:8px;background:hsla(16,85%,58%,0.1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">👥</div>
+          <h3 style="font-weight:600;font-size:1.05rem;margin-bottom:0.5rem;">Group Preferences</h3>
+          <p style="font-size:0.875rem;color:var(--muted-fg);">Collect everyone's cuisine tastes, dietary needs, and distance limits in one place.</p>
+        </div>
+        <div class="card" style="padding:1.5rem;">
+          <div style="width:48px;height:48px;border-radius:8px;background:hsla(16,85%,58%,0.1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">📍</div>
+          <h3 style="font-weight:600;font-size:1.05rem;margin-bottom:0.5rem;">Smart Matching</h3>
+          <p style="font-size:0.875rem;color:var(--muted-fg);">Our algorithm finds restaurants that work for everyone, ranked by best fit.</p>
+        </div>
+        <div class="card" style="padding:1.5rem;">
+          <div style="width:48px;height:48px;border-radius:8px;background:hsla(16,85%,58%,0.1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">🗳️</div>
+          <h3 style="font-weight:600;font-size:1.05rem;margin-bottom:0.5rem;">Vote Together</h3>
+          <p style="font-size:0.875rem;color:var(--muted-fg);">Let the group vote on favorites when you want everyone's input.</p>
+        </div>
+        <div class="card" style="padding:1.5rem;">
+          <div style="width:48px;height:48px;border-radius:8px;background:hsla(16,85%,58%,0.1);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;">🔀</div>
+          <h3 style="font-weight:600;font-size:1.05rem;margin-bottom:0.5rem;">Random Pick</h3>
+          <p style="font-size:0.875rem;color:var(--muted-fg);">Can't decide? Let fate choose with our fun randomizer spinner.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it Works -->
+  <section id="how-it-works" style="padding:5rem 1.5rem;">
+    <div style="max-width:1280px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:3rem;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:2.25rem;font-weight:700;margin-bottom:1rem;">How It Works</h2>
+        <p style="color:var(--muted-fg);font-size:1.05rem;max-width:500px;margin:0 auto;">Three simple steps to end the "where should we eat?" debate forever.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;">
+        <div style="position:relative;padding-top:3rem;">
+          <div style="font-size:5rem;font-weight:700;color:hsla(16,85%,58%,0.12);position:absolute;top:0;left:-8px;line-height:1;">01</div>
+          <h3 style="font-size:1.2rem;font-weight:600;margin-bottom:0.75rem;">Create a Group</h3>
+          <p style="color:var(--muted-fg);line-height:1.7;">Start a new session and share the unique code with your friends or family.</p>
+        </div>
+        <div style="position:relative;padding-top:3rem;">
+          <div style="font-size:5rem;font-weight:700;color:hsla(16,85%,58%,0.12);position:absolute;top:0;left:-8px;line-height:1;">02</div>
+          <h3 style="font-size:1.2rem;font-weight:600;margin-bottom:0.75rem;">Enter Preferences</h3>
+          <p style="color:var(--muted-fg);line-height:1.7;">Everyone fills out their cuisine preferences, dietary restrictions, and how far they're willing to travel.</p>
+        </div>
+        <div style="position:relative;padding-top:3rem;">
+          <div style="font-size:5rem;font-weight:700;color:hsla(16,85%,58%,0.12);position:absolute;top:0;left:-8px;line-height:1;">03</div>
+          <h3 style="font-size:1.2rem;font-weight:600;margin-bottom:0.75rem;">Get Results</h3>
+          <p style="color:var(--muted-fg);line-height:1.7;">See ranked restaurant recommendations, vote on favorites, or spin the wheel to decide!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section style="padding:5rem 1.5rem;">
+    <div style="max-width:640px;margin:0 auto;">
+      <div class="card" style="padding:4rem;text-align:center;background:linear-gradient(135deg,hsla(16,85%,58%,0.05),hsla(25,85%,55%,0.05),hsla(45,93%,55%,0.05));">
+        <h2 style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;margin-bottom:1rem;">Ready to End the Debate?</h2>
+        <p style="color:var(--muted-fg);margin-bottom:1.75rem;line-height:1.7;">Join thousands of groups who've discovered the easiest way to pick a restaurant together.</p>
+        <button class="btn-primary" style="font-size:1rem;padding:0.75rem 2rem;" onclick="goTo('home')">Get Started Free →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;">
+    <div style="max-width:1280px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon" style="width:28px;height:28px;">
+          <svg width="14" height="14" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+        </div>
+        <span style="font-weight:600;">TableVote</span>
+      </div>
+      <p style="font-size:0.875rem;color:var(--muted-fg);">© 2026 TableVote. All rights reserved.</p>
+    </div>
+  </footer>
+</div>
+
+<!-- ===================== HOME PAGE ===================== -->
+<div class="page" id="page-home">
+  <nav class="nav">
+    <div style="max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon"><svg width="20" height="20" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-size:1.2rem;font-weight:700;">TableVote</span>
+      </div>
+      <button class="btn-ghost" style="gap:0.5rem;">
+        <span style="width:32px;height:32px;border-radius:50%;background:hsla(16,85%,58%,0.12);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--primary);">MJ</span>
+        <span style="font-size:0.875rem;font-weight:500;">Madeline</span>
+        <span>▾</span>
+      </button>
+    </div>
+  </nav>
+  <main style="max-width:1280px;margin:0 auto;padding:2rem 1.5rem;">
+    <div style="margin-bottom:2rem;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.875rem;font-weight:700;margin-bottom:0.4rem;">Welcome back, Madeline!</h1>
+      <p style="color:var(--muted-fg);">Start a new group decision or join an existing one.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:3rem;">
+      <div class="card" style="padding:1.5rem;">
+        <div style="margin-bottom:1rem;">
+          <h3 style="font-size:1rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;"><span style="color:var(--primary);">+</span> Start New Group</h3>
+          <p style="font-size:0.875rem;color:var(--muted-fg);">Create a new group and invite friends to share their preferences.</p>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Group Name</label>
+          <input class="input" id="group-name-input" placeholder="e.g., Friday Night Dinner" />
+        </div>
+        <button class="btn-primary" style="width:100%;justify-content:center;" onclick="createGroup()">Create Group →</button>
+      </div>
+      <div class="card" style="padding:1.5rem;">
+        <div style="margin-bottom:1rem;">
+          <h3 style="font-size:1rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem;"><span style="color:var(--primary);">👥</span> Join Existing Group</h3>
+          <p style="font-size:0.875rem;color:var(--muted-fg);">Enter the 6-character code shared by your friend.</p>
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Group Code</label>
+          <input class="input" id="join-code-input" placeholder="ABC123" style="font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.15em;" maxlength="6" oninput="this.value=this.value.replace(/[^A-Za-z0-9]/g,'').toUpperCase()" />
+        </div>
+        <button class="btn-outline" style="width:100%;justify-content:center;" onclick="joinGroup()">Join Group →</button>
+      </div>
+    </div>
+    <div>
+      <h2 style="font-size:1.15rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;"><span style="color:var(--muted-fg);">🕐</span> Recent Groups</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+        <div class="card" style="padding:1rem;cursor:pointer;" onclick="goTo('results')">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <p style="font-weight:500;">Friday Night Dinner</p>
+            <span class="badge badge-secondary">results</span>
+          </div>
+          <div style="display:flex;gap:1rem;font-size:0.8rem;color:var(--muted-fg);">
+            <span style="font-family:'JetBrains Mono',monospace;">#XK8P2Q</span>
+            <span>Mar 28, 2026</span>
+          </div>
+        </div>
+        <div class="card" style="padding:1rem;cursor:pointer;" onclick="goTo('preferences')">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <p style="font-weight:500;">Team Lunch</p>
+            <span class="badge badge-secondary">collecting</span>
+          </div>
+          <div style="display:flex;gap:1rem;font-size:0.8rem;color:var(--muted-fg);">
+            <span style="font-family:'JetBrains Mono',monospace;">#LM4RT9</span>
+            <span>Apr 1, 2026</span>
+          </div>
+        </div>
+        <div class="card" style="padding:1rem;cursor:pointer;" onclick="goTo('decision')">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <p style="font-weight:500;">Birthday Dinner</p>
+            <span class="badge badge-secondary">decided</span>
+          </div>
+          <div style="display:flex;gap:1rem;font-size:0.8rem;color:var(--muted-fg);">
+            <span style="font-family:'JetBrains Mono',monospace;">#BZ7WN1</span>
+            <span>Mar 15, 2026</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== PREFERENCES PAGE ===================== -->
+<div class="page" id="page-preferences">
+  <nav class="nav">
+    <div style="max-width:896px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <button class="btn-ghost" onclick="goTo('home')">← Back</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon-sm"><svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-weight:600;" class="group-name-display">Friday Night Dinner</span>
+      </div>
+      <div></div>
+    </div>
+  </nav>
+  <main style="max-width:896px;margin:0 auto;padding:2rem 1.5rem;" id="pref-main">
+    <div style="margin-bottom:2rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <h1 style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;" id="pref-group-name">Friday Night Dinner</h1>
+          <p style="color:var(--muted-fg);">Share your food preferences</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <span style="font-size:0.875rem;color:var(--muted-fg);">👥 <span id="pref-member-count">1</span> member<span id="pref-member-plural"></span></span>
+          <button class="btn-outline" style="font-family:'JetBrains Mono',monospace;" id="pref-group-code"># XK8P2Q</button>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:0.875rem;margin-bottom:0.4rem;">
+          <span style="color:var(--muted-fg);" id="pref-step-label">Step 1 of 5</span>
+          <span style="font-weight:500;" id="pref-step-title">Cuisine Preferences</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="pref-progress" style="width:20%;"></div></div>
+      </div>
+    </div>
+    <!-- Step panels -->
+    <div id="pref-step-0" class="card" style="padding:1.5rem;margin-bottom:1.5rem;">
+      <h3 style="font-size:1rem;font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.5rem;"><span style="color:var(--primary);">🍽</span> Cuisine Preferences</h3>
+      <p style="font-size:0.875rem;color:var(--muted-fg);margin-bottom:1rem;">What types of food are you in the mood for?</p>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+        <span class="cuisine-badge selected" onclick="toggleCuisine(this)">✓ Italian</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Mexican</span>
+        <span class="cuisine-badge selected" onclick="toggleCuisine(this)">✓ Japanese</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Chinese</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Indian</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Thai</span>
+        <span class="cuisine-badge selected" onclick="toggleCuisine(this)">✓ American</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Mediterranean</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">French</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Korean</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Vietnamese</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Greek</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Middle Eastern</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Caribbean</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Ethiopian</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Spanish</span>
+      </div>
+    </div>
+    <div id="pref-step-1" class="card" style="padding:1.5rem;margin-bottom:1.5rem;display:none;">
+      <h3 style="font-size:1rem;font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.5rem;"><span style="color:var(--primary);">🍽</span> Dietary Restrictions</h3>
+      <p style="font-size:0.875rem;color:var(--muted-fg);margin-bottom:0.5rem;">Any dietary needs we should know about?</p>
+      <p style="font-size:0.8rem;color:var(--muted-fg);margin-bottom:1rem;">Select any that apply (optional)</p>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Vegetarian</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Vegan</span>
+        <span class="cuisine-badge selected" onclick="toggleCuisine(this)">✓ Gluten-Free</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Halal</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Kosher</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Dairy-Free</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Nut-Free</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Pescatarian</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Keto</span>
+        <span class="cuisine-badge" onclick="toggleCuisine(this)">Paleo</span>
+      </div>
+    </div>
+    <div id="pref-step-2" class="card" style="padding:1.5rem;margin-bottom:1.5rem;display:none;">
+      <h3 style="font-size:1rem;font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.5rem;"><span style="color:var(--primary);">📍</span> Distance & Location</h3>
+      <p style="font-size:0.875rem;color:var(--muted-fg);margin-bottom:1.25rem;">How far are you willing to travel?</p>
+      <label>Your Location</label>
+      <p style="font-size:0.875rem;color:var(--muted-fg);margin-bottom:0.75rem;">Share your location so we can find restaurants convenient for everyone in the group.</p>
+      <div id="location-btn-wrap">
+        <button class="btn-primary" style="width:100%;justify-content:center;margin-bottom:1.5rem;" onclick="shareLocation()">📍 Share My Location</button>
+      </div>
+      <div id="location-detected" style="display:none;margin-bottom:1.5rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;padding:1rem;border-radius:9px;background:hsla(16,85%,58%,0.05);border:1px solid hsla(16,85%,58%,0.2);">
+          <div style="width:40px;height:40px;border-radius:50%;background:hsla(16,85%,58%,0.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">📍</div>
+          <div style="flex:1;">
+            <p style="font-weight:500;" id="location-name-display">Detecting…</p>
+            <p style="font-size:0.8rem;color:var(--muted-fg);" id="location-coords-display"></p>
+          </div>
+          <button class="btn-outline" style="padding:0.35rem 0.75rem;font-size:0.8rem;" onclick="shareLocation()">Update</button>
+        </div>
+      </div>
+      <div id="location-error" style="display:none;font-size:0.875rem;color:var(--destructive);margin-bottom:1rem;"></div>
+      <div style="border-top:1px solid var(--border);padding-top:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+          <label style="margin:0;">Maximum Distance</label>
+          <span style="font-size:1.1rem;font-weight:600;color:var(--primary);">10 miles</span>
+        </div>
+        <input type="range" class="slider" min="1" max="25" value="10" oninput="prefs.maxDistance=parseInt(this.value);this.previousElementSibling.querySelector('span').textContent=this.value+' miles'" />
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted-fg);margin-top:0.25rem;"><span>1 mile</span><span>25 miles</span></div>
+      </div>
+    </div>
+    <div id="pref-step-3" class="card" style="padding:1.5rem;margin-bottom:1.5rem;display:none;">
+      <h3 style="font-size:1rem;font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.5rem;"><span style="color:var(--primary);">💵</span> Price Range</h3>
+      <p style="font-size:0.875rem;color:var(--muted-fg);margin-bottom:1rem;">What's your budget for this meal?</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;">
+        <div class="price-card" onclick="togglePrice(this)"><div style="font-size:1.5rem;font-weight:700;color:var(--primary);">$</div><div style="font-size:0.75rem;color:var(--muted-fg);">Under $15</div></div>
+        <div class="price-card selected" onclick="togglePrice(this)"><div style="font-size:1.5rem;font-weight:700;color:var(--primary);">$$</div><div style="font-size:0.75rem;color:var(--muted-fg);">$15–30</div></div>
+        <div class="price-card selected" onclick="togglePrice(this)"><div style="font-size:1.5rem;font-weight:700;color:var(--primary);">$$$</div><div style="font-size:0.75rem;color:var(--muted-fg);">$30–60</div></div>
+        <div class="price-card" onclick="togglePrice(this)"><div style="font-size:1.5rem;font-weight:700;color:var(--primary);">$$$$</div><div style="font-size:0.75rem;color:var(--muted-fg);">$60+</div></div>
+      </div>
+    </div>
+    <div id="pref-step-4" class="card" style="padding:1.5rem;margin-bottom:1.5rem;display:none;">
+      <h3 style="font-size:1rem;font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.5rem;"><span style="color:var(--primary);">⭐</span> Minimum Rating</h3>
+      <p style="font-size:0.875rem;color:var(--muted-fg);margin-bottom:1.25rem;">What quality level are you looking for?</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+        <label style="margin:0;">Minimum Rating</label>
+        <span style="display:flex;align-items:center;gap:0.25rem;font-size:1.1rem;font-weight:600;">⭐ <span id="rating-val">3.5</span></span>
+      </div>
+      <input type="range" class="slider" min="1" max="5" step="0.5" value="3.5" oninput="prefs.minRating=parseFloat(this.value);document.getElementById('rating-val').textContent=this.value" />
+      <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--muted-fg);margin-top:0.25rem;"><span>1.0 (Any)</span><span>5.0 (Only the best)</span></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <button class="btn-outline" id="pref-back" onclick="prefBack()" style="gap:0.5rem;" disabled>← Back</button>
+      <button class="btn-primary" id="pref-next" onclick="prefNext()" style="gap:0.5rem;">Next →</button>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== WAITING ROOM ===================== -->
+<div class="page" id="page-waiting">
+  <nav class="nav">
+    <div style="max-width:896px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <button class="btn-ghost" onclick="goTo('preferences')">← Edit Preferences</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon-sm"><svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-weight:600;" class="group-name-display">Friday Night Dinner</span>
+      </div>
+      <div></div>
+    </div>
+  </nav>
+  <main style="max-width:640px;margin:0 auto;padding:3rem 1.5rem;text-align:center;">
+    <!-- Animated food spinner -->
+    <div style="position:relative;width:192px;height:192px;margin:0 auto 2rem;">
+      <div id="food-ring" style="position:absolute;inset:0;border-radius:50%;border:1px dashed hsla(16,50%,70%,0.5);animation:spin 8s linear infinite;"></div>
+      <div id="food-icons-container" style="position:absolute;inset:0;"></div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+        <div style="width:64px;height:64px;border-radius:50%;background:hsla(16,85%,58%,0.1);border:2px solid hsla(16,85%,58%,0.3);display:flex;align-items:center;justify-content:center;font-size:1.5rem;animation:spin 8s linear infinite;">🧑‍🍳</div>
+      </div>
+      <div id="food-items" style="position:absolute;inset:0;pointer-events:none;"></div>
+    </div>
+
+    <p style="font-size:1.05rem;color:var(--muted-fg);font-weight:500;margin-bottom:2rem;" id="waiting-msg">Gathering everyone's cravings...</p>
+
+    <div class="card" style="max-width:320px;margin:0 auto 2rem;padding:1.5rem;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;font-size:0.875rem;font-weight:500;margin-bottom:1rem;">
+        👥 <span id="wait-submitted-label">1 of 1 members submitted</span>
+      </div>
+      <div class="progress-bar" style="margin-bottom:1rem;"><div class="progress-fill" id="wait-progress-fill" style="width:100%;"></div></div>
+      <div style="display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap;" id="wait-member-dots"></div>
+    </div>
+
+    <p style="font-size:0.875rem;color:var(--muted-fg);margin-bottom:0.75rem;">Share this code so others can join and submit their preferences</p>
+    <button id="wait-group-code" class="btn-outline" style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;padding:0.75rem 2rem;">📋 #XK8P2Q</button>
+
+    <div style="margin-top:1.5rem;max-width:320px;margin-left:auto;margin-right:auto;">
+      <button class="btn-outline" style="width:100%;justify-content:center;font-size:0.875rem;margin-bottom:1rem;" onclick="simulateMemberJoin()">+ Simulate member joining</button>
+    </div>
+
+    <div id="wait-all-submitted" style="display:none;padding:1.5rem;background:var(--accent);border-radius:9px;max-width:320px;margin:0 auto;">
+      <p style="font-size:1.05rem;font-weight:600;color:var(--primary);margin-bottom:1rem;">Everyone's in! Ready to find your restaurant.</p>
+      <button class="btn-primary" style="font-size:1rem;padding:0.75rem 2rem;width:100%;justify-content:center;" onclick="goTo('results')">View Restaurant Matches →</button>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== RESULTS PAGE ===================== -->
+<div class="page" id="page-results">
+  <nav class="nav">
+    <div style="max-width:896px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <button class="btn-ghost" onclick="goTo('preferences')">← Preferences</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon-sm"><svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-weight:600;" class="group-name-display">Friday Night Dinner</span>
+      </div>
+      <div></div>
+    </div>
+  </nav>
+  <main style="max-width:896px;margin:0 auto;padding:2rem 1.5rem;">
+    <div style="margin-bottom:1.5rem;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;margin-bottom:0.4rem;">Your Top Restaurant Matches</h1>
+      <p style="color:var(--muted-fg);">Ranked by how well they match everyone's preferences</p>
+    </div>
+    <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <button class="btn-primary" style="flex:1;justify-content:center;" onclick="goTo('vote')">🗳️ Start Group Vote</button>
+      <button class="btn-outline" style="flex:1;justify-content:center;" onclick="goTo('randomizer')">🔀 Random Pick</button>
+    </div>
+
+    <div id="results-list">
+      <div id="results-loading" style="text-align:center;padding:3rem 1rem;">
+        <div class="spinner" style="margin:0 auto 1rem;"></div>
+        <p style="color:var(--muted-fg);">Finding the best matches…</p>
+      </div>
+      <div id="results-error" style="display:none;text-align:center;padding:3rem 1rem;">
+        <p style="color:var(--destructive);margin-bottom:1rem;font-size:0.9rem;" id="results-error-msg"></p>
+        <button class="btn-outline" onclick="fetchRestaurants()">Try Again</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== VOTE PAGE ===================== -->
+<div class="page" id="page-vote">
+  <nav class="nav">
+    <div style="max-width:896px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <button class="btn-ghost" onclick="goTo('results')">← Results</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon-sm"><svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-weight:600;" class="group-name-display">Friday Night Dinner</span>
+      </div>
+      <div></div>
+    </div>
+  </nav>
+  <main style="max-width:896px;margin:0 auto;padding:2rem 1.5rem;">
+    <div style="margin-bottom:1.5rem;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;margin-bottom:0.4rem;">Vote for Your Favorites</h1>
+      <p style="color:var(--muted-fg);margin-bottom:1rem;">Select the restaurants you'd be happy eating at.</p>
+      <div class="card" style="padding:1rem;background:var(--muted);">
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+          <span style="font-size:0.875rem;font-weight:500;">Voting Progress</span>
+          <span style="font-size:0.875rem;color:var(--muted-fg);" id="vote-progress-label">1 of 1 members voted</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="vote-progress-fill" style="width:100%;"></div></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.5rem;" id="vote-cards"></div>
+
+    <div style="display:flex;flex-direction:column;gap:0.75rem;">
+      <button class="btn-primary" id="vote-submit-btn" style="width:100%;justify-content:center;font-size:1rem;padding:0.875rem;" onclick="submitVotes()">
+        👍 Submit Votes
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== RANDOMIZER PAGE ===================== -->
+<div class="page" id="page-randomizer">
+  <nav class="nav">
+    <div style="max-width:896px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <button class="btn-ghost" onclick="goTo('results')">← Results</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon-sm"><svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-weight:600;" class="group-name-display">Friday Night Dinner</span>
+      </div>
+      <div></div>
+    </div>
+  </nav>
+  <main style="max-width:640px;margin:0 auto;padding:2rem 1.5rem;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;margin-bottom:0.4rem;">Let Fate Decide!</h1>
+      <p style="color:var(--muted-fg);">Can't choose? Spin the wheel and let destiny pick your dinner.</p>
+    </div>
+
+    <div style="position:relative;height:320px;overflow:hidden;margin-bottom:2rem;" id="spin-container">
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,var(--background),transparent 30%,transparent 70%,var(--background));z-index:10;pointer-events:none;"></div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem;padding:1rem 0;" id="spin-list"></div>
+    </div>
+
+    <div id="spin-btn-area">
+      <button class="btn-primary" style="width:100%;justify-content:center;font-size:1rem;padding:0.875rem;" onclick="doSpin()">🔀 Spin the Wheel!</button>
+    </div>
+
+    <div id="spin-winner" style="display:none;flex-direction:column;gap:0.75rem;">
+      <div class="card" style="padding:1.5rem;text-align:center;background:hsla(16,85%,58%,0.05);border:1px solid hsla(16,85%,58%,0.2);">
+        <div style="font-size:2rem;margin-bottom:0.75rem;">✨</div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;margin-bottom:0.25rem;" id="winner-name"></h2>
+        <p style="color:var(--muted-fg);font-size:0.875rem;" id="winner-sub"></p>
+      </div>
+      <div style="display:flex;gap:0.75rem;">
+        <button class="btn-outline" style="flex:1;justify-content:center;" onclick="resetSpin()">🔀 Spin Again</button>
+        <button class="btn-primary" style="flex:1;justify-content:center;" onclick="confirmSpin()">Lock It In!</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== DECISION PAGE ===================== -->
+<div class="page" id="page-decision">
+  <nav class="nav">
+    <div style="max-width:896px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <button class="btn-ghost" onclick="goTo('home')">← Home</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon-sm"><svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-weight:600;" class="group-name-display">Friday Night Dinner</span>
+      </div>
+      <div></div>
+    </div>
+  </nav>
+  <main style="max-width:640px;margin:0 auto;padding:2rem 1.5rem;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="width:64px;height:64px;border-radius:50%;background:hsla(16,85%,58%,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:2rem;" class="animate-pulse">🎉</div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.875rem;font-weight:700;margin-bottom:0.5rem;">It's Decided!</h1>
+      <p style="color:var(--muted-fg);display:flex;align-items:center;justify-content:center;gap:0.5rem;" id="decision-method">🗳️ Won by group vote</p>
+    </div>
+
+    <div class="card" style="overflow:hidden;margin-bottom:1.5rem;">
+      <div id="decision-img" style="position:relative;width:100%;height:220px;background:linear-gradient(135deg,hsla(16,85%,58%,0.2),hsla(45,93%,55%,0.2));display:flex;align-items:center;justify-content:center;font-size:6rem;overflow:hidden;">
+        🍽️
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,white,transparent);pointer-events:none;"></div>
+        <div style="position:absolute;top:1rem;right:1rem;width:48px;height:48px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.25rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1;">🏆</div>
+      </div>
+      <div style="padding:1.5rem;">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <h2 id="decision-name" style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;margin-bottom:0.75rem;">—</h2>
+          <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;flex-wrap:wrap;">
+            <span class="badge badge-secondary" id="decision-cuisine"></span>
+            <span class="badge badge-outline" id="decision-price"></span>
+            <span style="display:flex;align-items:center;gap:0.25rem;font-weight:500;">⭐ <span id="decision-rating">—</span> <span id="decision-reviews" style="font-weight:400;color:var(--muted-fg);font-size:0.875rem;"></span></span>
+          </div>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin-bottom:1.25rem;" />
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+            <span style="margin-top:2px;">📍</span>
+            <div>
+              <p style="font-weight:500;" id="decision-address"></p>
+              <p style="font-size:0.875rem;color:var(--muted-fg);" id="decision-distance"></p>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;" id="decision-phone-row">
+            <span>📞</span>
+            <a id="decision-phone" style="font-weight:500;color:inherit;text-decoration:none;"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:2rem;">
+      <button id="decision-directions" class="btn-primary" style="justify-content:center;padding:0.875rem;font-size:1rem;">🧭 Get Directions</button>
+      <button class="btn-outline" style="justify-content:center;padding:0.875rem;font-size:1rem;" id="decision-share">📤 Share Result</button>
+    </div>
+
+    <div style="padding-top:2rem;border-top:1px solid var(--border);text-align:center;">
+      <p style="color:var(--muted-fg);margin-bottom:1rem;">Ready to start another decision?</p>
+      <button class="btn-outline" onclick="goTo('home')">Start New Group</button>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ── Google Places API ──────────────────────────────────────────────────────
+  const PLACES_API_KEY = 'AIzaSyB-duihZyzJ8NEY6dFZXAykh6kmKtqSUfU';
+
+  // Preferences state — populated as user steps through the wizard
+  // (defaults match the pre-selected badges in the HTML)
+  const prefs = {
+    cuisines:    ['Italian', 'Japanese', 'American'],
+    dietary:     ['Gluten-Free'],
+    maxDistance: 10,        // miles
+    priceRange:  ['$$', '$$$'],
+    minRating:   3.5,
+    latitude:    null,
+    longitude:   null,
+    locationName: null,
+  };
+
+  // Fetched restaurant data (Places API results)
+  let fetchedRestaurants = [];
+  let spinCount = 3;           // how many cards the randomizer spins through
+  let pendingWinner = null;    // restaurant chosen by randomizer, awaiting confirmation
+
+  const priceLevelToSymbol = {
+    PRICE_LEVEL_FREE:         'Free',
+    PRICE_LEVEL_INEXPENSIVE:  '$',
+    PRICE_LEVEL_MODERATE:     '$$',
+    PRICE_LEVEL_EXPENSIVE:    '$$$',
+    PRICE_LEVEL_VERY_EXPENSIVE:'$$$$',
+  };
+  const symbolToPriceLevel = {
+    '$':    'PRICE_LEVEL_INEXPENSIVE',
+    '$$':   'PRICE_LEVEL_MODERATE',
+    '$$$':  'PRICE_LEVEL_EXPENSIVE',
+    '$$$$': 'PRICE_LEVEL_VERY_EXPENSIVE',
+  };
+
+  function haversineDistanceMi(lat1, lon1, lat2, lon2) {
+    const R = 3959;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function calcMatchScore(place) {
+    let score = 0;
+    // Rating (0–40 pts)
+    score += ((place.rating || 0) / 5.0) * 40;
+    // Cuisine match (0–35 pts)
+    const type = (place.primaryTypeDisplayName?.text || '').toLowerCase();
+    const matched = prefs.cuisines.some(c =>
+      type.includes(c.toLowerCase()) || c.toLowerCase().split(' ').some(w => type.includes(w))
+    );
+    score += matched ? 35 : 12;
+    // Price match (0–15 pts)
+    const sym = priceLevelToSymbol[place.priceLevel] || '';
+    score += prefs.priceRange.includes(sym) ? 15 : 4;
+    // Review count bonus (0–10 pts)
+    score += Math.min(10, ((place.userRatingCount || 0) / 2000) * 10);
+    return Math.min(100, Math.round(score));
+  }
+
+  function scoreColor(score) {
+    if (score >= 90) return '#22c55e';
+    if (score >= 75) return 'var(--primary)';
+    if (score >= 60) return '#f59e0b';
+    return 'var(--muted-fg)';
+  }
+
+  function photoUrl(place) {
+    if (place.photos?.length > 0) {
+      return `https://places.googleapis.com/v1/${place.photos[0].name}/media?maxWidthPx=400&key=${PLACES_API_KEY}`;
+    }
+    return null;
+  }
+
+  function fmtReviews(n) {
+    if (!n) return '?';
+    return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : n;
+  }
+
+  async function fetchRestaurants() {
+    const loadingEl = document.getElementById('results-loading');
+    const errorEl   = document.getElementById('results-error');
+    // Clear previous results
+    document.querySelectorAll('.result-card').forEach(el => el.remove());
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (errorEl)   errorEl.style.display   = 'none';
+
+    const cuisineQuery = prefs.cuisines.length > 0
+      ? prefs.cuisines.join(' OR ') + ' restaurant'
+      : 'restaurant';
+
+    const body = {
+      textQuery:       cuisineQuery,
+      maxResultCount:  10,
+      minRating:       prefs.minRating,
+    };
+
+    if (prefs.priceRange.length > 0 && prefs.priceRange.length < 4) {
+      body.priceLevels = prefs.priceRange.map(p => symbolToPriceLevel[p]).filter(Boolean);
+    }
+
+    if (prefs.latitude && prefs.longitude) {
+      body.locationBias = {
+        circle: {
+          center: { latitude: prefs.latitude, longitude: prefs.longitude },
+          radius: prefs.maxDistance * 1609.34,
+        }
+      };
+    }
+
+    try {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type':   'application/json',
+          'X-Goog-Api-Key': PLACES_API_KEY,
+          'X-Goog-FieldMask': [
+            'places.id',
+            'places.displayName',
+            'places.formattedAddress',
+            'places.rating',
+            'places.userRatingCount',
+            'places.priceLevel',
+            'places.primaryTypeDisplayName',
+            'places.internationalPhoneNumber',
+            'places.location',
+            'places.photos',
+          ].join(','),
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `API error ${res.status}`);
+      }
+
+      const data = await res.json();
+      const places = data.places || [];
+
+      if (places.length === 0) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) {
+          document.getElementById('results-error-msg').textContent =
+            'No restaurants found matching your preferences. Try adjusting your criteria.';
+          errorEl.style.display = 'block';
+        }
+        return;
+      }
+
+      // Annotate with match score and distance
+      fetchedRestaurants = places.map(place => ({
+        ...place,
+        matchScore: calcMatchScore(place),
+        distanceMi: (prefs.latitude && prefs.longitude && place.location)
+          ? haversineDistanceMi(prefs.latitude, prefs.longitude, place.location.latitude, place.location.longitude)
+          : null,
+      })).sort((a, b) => b.matchScore - a.matchScore);
+
+      if (loadingEl) loadingEl.style.display = 'none';
+      renderResults();
+      renderVoteCards();
+      renderSpinList();
+
+    } catch (err) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (errorEl) {
+        document.getElementById('results-error-msg').textContent = 'Error: ' + err.message;
+        errorEl.style.display = 'block';
+      }
+    }
+  }
+
+  function renderResults() {
+    const list = document.getElementById('results-list');
+    fetchedRestaurants.slice(0, 10).forEach((place, i) => {
+      const isTop  = i === 0;
+      const sym    = priceLevelToSymbol[place.priceLevel] || '';
+      const photo  = photoUrl(place);
+      const dist   = place.distanceMi != null ? place.distanceMi.toFixed(1) + ' mi' : '';
+      const score  = place.matchScore;
+
+      const card = document.createElement('div');
+      card.className = 'restaurant-card result-card' + (isTop ? ' top-pick' : '');
+      card.innerHTML = `
+        <div style="display:flex;flex-direction:row;">
+          <div style="position:relative;width:192px;min-height:130px;background:linear-gradient(135deg,hsla(16,85%,58%,0.2),hsla(45,93%,55%,0.2));display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
+            ${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;" onerror="this.style.display='none'" />` : '<span style="font-size:3rem;position:relative;z-index:1;">🍽️</span>'}
+            ${isTop ? `<div style="position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:0.85rem;z-index:2;">⭐</div>` : ''}
+            <div style="position:absolute;top:12px;left:12px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;z-index:2;">#${i+1}</div>
+          </div>
+          <div style="flex:1;padding:1.25rem;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;margin-bottom:0.75rem;">
+              <div>
+                <h3 style="font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                  ${place.displayName?.text || 'Restaurant'}
+                  ${isTop ? '<span class="badge badge-default" style="font-size:0.7rem;">Best Match</span>' : ''}
+                </h3>
+                <p style="font-size:0.875rem;color:var(--muted-fg);">${place.primaryTypeDisplayName?.text || 'Restaurant'}</p>
+              </div>
+              <div style="font-size:1.4rem;font-weight:700;color:${scoreColor(score)};white-space:nowrap;">
+                ${score}%<span style="font-size:0.75rem;font-weight:400;color:var(--muted-fg);"> match</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:1rem;font-size:0.875rem;color:var(--muted-fg);margin-bottom:0.75rem;">
+              <span>⭐ <strong style="color:var(--foreground);">${place.rating?.toFixed(1) ?? '?'}</strong> (${fmtReviews(place.userRatingCount)} reviews)</span>
+              ${dist ? `<span>📍 ${dist}</span>` : ''}
+              ${sym  ? `<span>💵 ${sym}</span>`  : ''}
+            </div>
+            <p style="font-size:0.875rem;color:var(--muted-fg);">${place.formattedAddress || ''}</p>
+          </div>
+        </div>`;
+      list.appendChild(card);
+    });
+  }
+
+  function renderVoteCards() {
+    const container = document.getElementById('vote-cards');
+    container.innerHTML = '';
+    fetchedRestaurants.slice(0, 5).forEach((place, i) => {
+      const photo = photoUrl(place);
+      const sym   = priceLevelToSymbol[place.priceLevel] || '';
+      const dist  = place.distanceMi != null ? place.distanceMi.toFixed(1) + ' mi' : '';
+      const card  = document.createElement('div');
+      card.className = 'vote-card';
+      card.dataset.idx = i;
+      card.onclick = () => toggleVote(card, i);
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;">
+          <div style="position:relative;width:96px;height:96px;background:linear-gradient(135deg,hsla(16,85%,58%,0.2),hsla(45,93%,55%,0.2));display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;font-size:2.5rem;">
+            ${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />` : '🍽️'}
+          </div>
+          <div style="flex:1;padding:1rem;">
+            <h3 style="font-weight:600;">${place.displayName?.text || 'Restaurant'}${i === 0 ? ' ⭐' : ''}</h3>
+            <p style="font-size:0.875rem;color:var(--muted-fg);">${place.primaryTypeDisplayName?.text || ''}${sym ? ' • ' + sym : ''}</p>
+            <div style="display:flex;gap:0.75rem;margin-top:0.4rem;font-size:0.8rem;color:var(--muted-fg);">
+              <span>⭐ ${place.rating?.toFixed(1) ?? '?'}</span>
+              ${dist ? `<span>📍 ${dist}</span>` : ''}
+            </div>
+          </div>
+        </div>`;
+      container.appendChild(card);
+    });
+    // Reset vote submit button label
+    const btn = document.getElementById('vote-submit-btn');
+    if (btn) btn.textContent = '👍 Submit Votes';
+  }
+
+  function renderSpinList() {
+    const list = document.getElementById('spin-list');
+    list.innerHTML = '';
+    const spinPlaces = fetchedRestaurants.slice(0, 5);
+    spinCount = spinPlaces.length;
+    spinPlaces.forEach((place, i) => {
+      const photo = photoUrl(place);
+      const sym   = priceLevelToSymbol[place.priceLevel] || '';
+      const card  = document.createElement('div');
+      card.className = 'restaurant-card';
+      card.id = 'rcard-' + i;
+      card.style.transition = 'all 0.15s';
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;">
+          <div style="width:80px;height:80px;background:linear-gradient(135deg,hsla(16,85%,58%,0.2),hsla(45,93%,55%,0.2));display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;overflow:hidden;">
+            ${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />` : '🍽️'}
+          </div>
+          <div style="flex:1;padding:0.75rem;">
+            <h3 style="font-weight:600;font-size:0.95rem;">${place.displayName?.text || 'Restaurant'}</h3>
+            <p style="font-size:0.8rem;color:var(--muted-fg);">${place.primaryTypeDisplayName?.text || ''}${sym ? ' • ' + sym : ''} • ⭐ ${place.rating?.toFixed(1) ?? '?'}</p>
+          </div>
+        </div>`;
+      list.appendChild(card);
+    });
+  }
+
+  function setDecision(restaurant, method) {
+    const photo = photoUrl(restaurant);
+    const sym   = priceLevelToSymbol[restaurant.priceLevel] || '';
+    const dist  = restaurant.distanceMi != null ? restaurant.distanceMi.toFixed(1) : null;
+
+    document.getElementById('decision-method').textContent =
+      method === 'random' ? '🔀 Chosen by random selection' : '🗳️ Won by group vote';
+
+    const imgDiv = document.getElementById('decision-img');
+    if (imgDiv) {
+      // remove old img if any
+      imgDiv.querySelectorAll('img').forEach(el => el.remove());
+      imgDiv.querySelectorAll('span:first-child').forEach(el => el.remove());
+      if (photo) {
+        const img = document.createElement('img');
+        img.src = photo;
+        img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+        img.onerror = () => img.remove();
+        imgDiv.insertBefore(img, imgDiv.firstChild);
+      }
+    }
+
+    const setT = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    setT('decision-name',     restaurant.displayName?.text || 'Restaurant');
+    setT('decision-cuisine',  restaurant.primaryTypeDisplayName?.text || '');
+    setT('decision-price',    sym);
+    setT('decision-rating',   restaurant.rating?.toFixed(1) ?? '?');
+    setT('decision-reviews',  `(${fmtReviews(restaurant.userRatingCount)} reviews)`);
+    setT('decision-address',  restaurant.formattedAddress || '');
+    setT('decision-distance', dist ? `${dist} miles away` : '');
+
+    const phoneRow  = document.getElementById('decision-phone-row');
+    const phoneLink = document.getElementById('decision-phone');
+    if (phoneRow && phoneLink) {
+      if (restaurant.internationalPhoneNumber) {
+        phoneLink.textContent = restaurant.internationalPhoneNumber;
+        phoneLink.href = 'tel:' + restaurant.internationalPhoneNumber;
+        phoneRow.style.display = 'flex';
+      } else {
+        phoneRow.style.display = 'none';
+      }
+    }
+
+    const dirsBtn = document.getElementById('decision-directions');
+    if (dirsBtn) {
+      const addr = encodeURIComponent(restaurant.formattedAddress || restaurant.displayName?.text || '');
+      dirsBtn.onclick = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${addr}`, '_blank');
+    }
+
+    const shareBtn = document.getElementById('decision-share');
+    if (shareBtn) {
+      shareBtn.onclick = () => {
+        const text = `We're going to ${restaurant.displayName?.text}! Let's eat!`;
+        if (navigator.share) {
+          navigator.share({ title: 'TableVote Decision', text, url: window.location.href });
+        } else {
+          navigator.clipboard.writeText(text);
+          shareBtn.textContent = '✓ Copied!';
+          setTimeout(() => shareBtn.textContent = '📤 Share Result', 2000);
+        }
+      };
+    }
+  }
+
+  function submitVotes() {
+    const selected = [...document.querySelectorAll('#vote-cards .vote-card.selected')];
+    if (selected.length === 0) return;
+    const idx = parseInt(selected[0].dataset.idx);
+    const restaurant = fetchedRestaurants[idx];
+    if (restaurant) { setDecision(restaurant, 'vote'); goTo('decision'); }
+  }
+
+  // ── Group state ────────────────────────────────────────────────────────────
+  const group = {
+    name: 'Friday Night Dinner',
+    code: 'XK8P2Q',
+    memberCount: 1,       // you, when you create/join
+    submittedCount: 1,    // you submitted your prefs
+    votedCount: 1,        // you voted
+  };
+
+  function updateMemberDisplays() {
+    const mc = group.memberCount;
+    const sc = group.submittedCount;
+    const vc = group.votedCount;
+
+    // Preferences header
+    const pmcEl = document.getElementById('pref-member-count');
+    const pmpEl = document.getElementById('pref-member-plural');
+    if (pmcEl) pmcEl.textContent = mc;
+    if (pmpEl) pmpEl.textContent = mc === 1 ? '' : 's';
+
+    // Waiting room submitted label
+    const wsl = document.getElementById('wait-submitted-label');
+    if (wsl) wsl.textContent = `${sc} of ${mc} member${mc === 1 ? '' : 's'} submitted`;
+
+    // Waiting room progress bar
+    const wpf = document.getElementById('wait-progress-fill');
+    if (wpf) wpf.style.width = (mc > 0 ? (sc / mc) * 100 : 0) + '%';
+
+    // Waiting room member dots
+    const dots = document.getElementById('wait-member-dots');
+    if (dots) {
+      dots.innerHTML = '';
+      for (let i = 0; i < mc; i++) {
+        const dot = document.createElement('div');
+        const submitted = i < sc;
+        dot.style.cssText = `width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;background:${submitted ? 'var(--primary)' : 'var(--muted)'};color:${submitted ? 'white' : 'var(--muted-fg)'};`;
+        dot.textContent = submitted ? '✓' : '?';
+        dots.appendChild(dot);
+      }
+    }
+
+    // Show/hide "everyone's in" panel
+    const allIn = document.getElementById('wait-all-submitted');
+    if (allIn) allIn.style.display = (sc >= mc && mc > 0) ? 'block' : 'none';
+
+    // Voting progress
+    const vpl = document.getElementById('vote-progress-label');
+    const vpf = document.getElementById('vote-progress-fill');
+    if (vpl) vpl.textContent = `${vc} of ${mc} member${mc === 1 ? '' : 's'} voted`;
+    if (vpf) vpf.style.width = (mc > 0 ? (vc / mc) * 100 : 0) + '%';
+  }
+
+  function simulateMemberJoin() {
+    group.memberCount += 1;
+    // New member hasn't submitted yet
+    updateMemberDisplays();
+  }
+
+  // Group creation
+  function generateCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+
+  function createGroup() {
+    const nameInput = document.getElementById('group-name-input');
+    const name = nameInput ? nameInput.value.trim() : '';
+    if (!name) {
+      if (nameInput) { nameInput.style.borderColor = 'var(--destructive)'; nameInput.focus(); }
+      return;
+    }
+    nameInput.style.borderColor = '';
+
+    // Reset group state — you are the only member when you create
+    group.name = name;
+    group.code = generateCode();
+    group.memberCount = 1;
+    group.submittedCount = 0;
+    group.votedCount = 1;
+
+    applyGroupMeta();
+    prefStep = 0;
+    resetPrefSteps();
+    goTo('preferences');
+  }
+
+  function joinGroup() {
+    const codeInput = document.getElementById('join-code-input');
+    const code = codeInput ? codeInput.value.trim().toUpperCase() : '';
+    if (code.length !== 6) {
+      if (codeInput) { codeInput.style.borderColor = 'var(--destructive)'; codeInput.focus(); }
+      return;
+    }
+    codeInput.style.borderColor = '';
+
+    // Joining increments the member count; submitted count stays the same until you submit prefs
+    group.memberCount += 1;
+    group.submittedCount = Math.min(group.submittedCount, group.memberCount - 1); // you haven't submitted yet
+
+    applyGroupMeta();
+    prefStep = 0;
+    resetPrefSteps();
+    goTo('preferences');
+  }
+
+  function applyGroupMeta() {
+    document.querySelectorAll('.group-name-display').forEach(el => el.textContent = group.name);
+    const prefName = document.getElementById('pref-group-name');
+    if (prefName) prefName.textContent = group.name;
+    const prefCode = document.getElementById('pref-group-code');
+    if (prefCode) prefCode.textContent = '# ' + group.code;
+    const waitCode = document.getElementById('wait-group-code');
+    if (waitCode) waitCode.textContent = '📋 #' + group.code;
+    updateMemberDisplays();
+  }
+
+  function resetPrefSteps() {
+    for (let i = 0; i < 5; i++) {
+      const el = document.getElementById('pref-step-' + i);
+      if (el) el.style.display = i === 0 ? 'block' : 'none';
+    }
+    document.getElementById('pref-back').disabled = true;
+    document.getElementById('pref-next').textContent = 'Next →';
+    document.getElementById('pref-next').onclick = prefNext;
+    updatePrefUI();
+  }
+
+  // Share My Location (mirrors the original preferences.tsx geolocation logic)
+  function shareLocation() {
+    const btnWrap = document.getElementById('location-btn-wrap');
+    const detected = document.getElementById('location-detected');
+    const errEl = document.getElementById('location-error');
+    const nameDisplay = document.getElementById('location-name-display');
+    const coordsDisplay = document.getElementById('location-coords-display');
+
+    if (!navigator.geolocation) {
+      errEl.textContent = 'Geolocation is not supported by your browser.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    // Show loading state
+    errEl.style.display = 'none';
+    const btn = btnWrap.querySelector('button');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Detecting location…'; }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        prefs.latitude  = lat;
+        prefs.longitude = lng;
+        if (coordsDisplay) coordsDisplay.textContent = lat.toFixed(4) + ', ' + lng.toFixed(4);
+
+        // Reverse geocode via Nominatim (same as original)
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+          const data = await res.json();
+          const city = data.address?.city || data.address?.town || data.address?.village || '';
+          const state = data.address?.state || '';
+          const label = (city && state) ? `${city}, ${state}` : (data.display_name?.split(',').slice(0, 2).join(',') || 'Current Location');
+          prefs.locationName = label;
+          if (nameDisplay) nameDisplay.textContent = label;
+        } catch {
+          prefs.locationName = 'Current Location';
+          if (nameDisplay) nameDisplay.textContent = 'Current Location';
+        }
+
+        btnWrap.style.display = 'none';
+        detected.style.display = 'block';
+        if (btn) { btn.disabled = false; btn.textContent = '📍 Share My Location'; }
+      },
+      (error) => {
+        if (btn) { btn.disabled = false; btn.textContent = '📍 Share My Location'; }
+        let msg = 'An unknown error occurred.';
+        if (error.code === error.PERMISSION_DENIED)    msg = 'Location access was denied. Please enable location permissions.';
+        if (error.code === error.POSITION_UNAVAILABLE) msg = 'Location information is unavailable.';
+        if (error.code === error.TIMEOUT)              msg = 'Location request timed out.';
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  const pages = ['landing','home','preferences','waiting','results','vote','randomizer','decision'];
+  let currentPage = 'landing';
+  updateMemberDisplays(); // initialize all count displays
+  let prefStep = 0;
+  const prefSteps = [
+    { label: 'Step 1 of 5', title: 'Cuisine Preferences', progress: 20 },
+    { label: 'Step 2 of 5', title: 'Dietary Restrictions', progress: 40 },
+    { label: 'Step 3 of 5', title: 'Distance & Location',   progress: 60 },
+    { label: 'Step 4 of 5', title: 'Price Range',           progress: 80 },
+    { label: 'Step 5 of 5', title: 'Minimum Rating',        progress: 100 },
+  ];
+
+  function goTo(page) {
+    document.getElementById('page-' + currentPage).classList.remove('active');
+    document.getElementById('page-' + page).classList.add('active');
+    pages.forEach(p => {
+      const el = document.getElementById('nav-' + p);
+      if (el) el.classList.toggle('current', p === page);
+    });
+    currentPage = page;
+    window.scrollTo(0, 0);
+    if (page === 'waiting') {
+      // You submitted your preferences — count yourself
+      if (group.submittedCount < group.memberCount) {
+        group.submittedCount = Math.min(group.submittedCount + 1, group.memberCount);
+      }
+      updateMemberDisplays();
+      startWaitingAnimation();
+    }
+    if (page === 'results') fetchRestaurants();
+    if (page === 'randomizer') resetSpin();
+    if (page === 'preferences') {
+      const locationErr = document.getElementById('location-error');
+      if (locationErr) locationErr.style.display = 'none';
+      updateMemberDisplays();
+    }
+  }
+
+  function toggleCuisine(el) {
+    el.classList.toggle('selected');
+    const isSelected = el.classList.contains('selected');
+    // Get the clean label (strip the leading checkmark if present)
+    const label = el.textContent.replace(/^✓ /, '').trim();
+    if (isSelected) {
+      el.textContent = '✓ ' + label;
+      if (prefStep === 0 && !prefs.cuisines.includes(label)) prefs.cuisines.push(label);
+      if (prefStep === 1 && !prefs.dietary.includes(label))  prefs.dietary.push(label);
+    } else {
+      el.textContent = label;
+      if (prefStep === 0) prefs.cuisines = prefs.cuisines.filter(c => c !== label);
+      if (prefStep === 1) prefs.dietary  = prefs.dietary.filter(d => d !== label);
+    }
+  }
+
+  function togglePrice(el) {
+    el.classList.toggle('selected');
+    const sym = el.querySelector('div').textContent.trim();
+    if (el.classList.contains('selected')) {
+      if (!prefs.priceRange.includes(sym)) prefs.priceRange.push(sym);
+    } else {
+      prefs.priceRange = prefs.priceRange.filter(p => p !== sym);
+    }
+  }
+
+  function prefNext() {
+    document.getElementById('pref-step-' + prefStep).style.display = 'none';
+    prefStep = Math.min(prefStep + 1, 4);
+    document.getElementById('pref-step-' + prefStep).style.display = 'block';
+    updatePrefUI();
+    if (prefStep === 4) {
+      document.getElementById('pref-next').textContent = 'Save Preferences';
+      document.getElementById('pref-next').onclick = () => goTo('waiting');
+    }
+  }
+
+  function prefBack() {
+    document.getElementById('pref-step-' + prefStep).style.display = 'none';
+    prefStep = Math.max(prefStep - 1, 0);
+    document.getElementById('pref-step-' + prefStep).style.display = 'block';
+    updatePrefUI();
+    document.getElementById('pref-next').textContent = 'Next →';
+    document.getElementById('pref-next').onclick = prefNext;
+  }
+
+  function updatePrefUI() {
+    document.getElementById('pref-step-label').textContent = prefSteps[prefStep].label;
+    document.getElementById('pref-step-title').textContent = prefSteps[prefStep].title;
+    document.getElementById('pref-progress').style.width = prefSteps[prefStep].progress + '%';
+    document.getElementById('pref-back').disabled = prefStep === 0;
+  }
+
+  // Waiting room animation
+  const foodEmojis = ['🍕','🥪','🥗','🍜','🥩','☕','🍷','🍪','🍦','🎂','🥐','🥤'];
+  let waitMsgIdx = 0;
+  const waitMsgs = ['Gathering everyone\'s cravings...','Mixing up the perfect menu...','Simmering the preferences...','Checking the kitchen...','Tasting the options...','Setting the table...'];
+  let waitInterval;
+
+  function startWaitingAnimation() {
+    const cont = document.getElementById('food-items');
+    if (!cont) return;
+    cont.innerHTML = '';
+    const size = 192;
+    const radius = 76;
+    foodEmojis.forEach((emoji, i) => {
+      const angle = (i * 360 / foodEmojis.length - 90) * Math.PI / 180;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      const span = document.createElement('span');
+      span.textContent = emoji;
+      span.style.cssText = `position:absolute;font-size:1.4rem;left:calc(50% + ${x}px - 14px);top:calc(50% + ${y}px - 14px);transition:all 0.3s;opacity:0.4;`;
+      span.id = 'ficon-' + i;
+      cont.appendChild(span);
+    });
+    let active = 0;
+    clearInterval(waitInterval);
+    waitInterval = setInterval(() => {
+      const prev = document.getElementById('ficon-' + active);
+      active = (active + 1) % foodEmojis.length;
+      const next = document.getElementById('ficon-' + active);
+      if (prev) { prev.style.opacity = '0.4'; prev.style.transform = 'scale(0.85)'; }
+      if (next) { next.style.opacity = '1'; next.style.transform = 'scale(1.5)'; }
+      waitMsgIdx = (waitMsgIdx + 1) % waitMsgs.length;
+      const msgEl = document.getElementById('waiting-msg');
+      if (msgEl) msgEl.textContent = waitMsgs[waitMsgIdx];
+    }, 600);
+  }
+
+  // Vote toggling
+  function toggleVote(card, idx) {
+    card.classList.toggle('selected');
+    const imgDiv = card.querySelector('[style*="flex-shrink"]');
+    if (card.classList.contains('selected')) {
+      card.style.boxShadow = '0 0 0 2px var(--primary)';
+      if (imgDiv) {
+        const overlay = document.createElement('div');
+        overlay.className = 'vote-overlay';
+        overlay.style.cssText = 'position:absolute;inset:0;background:hsla(16,85%,58%,0.2);display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = '<div style="width:40px;height:40px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:white;">✓</div>';
+        imgDiv.style.position = 'relative';
+        imgDiv.appendChild(overlay);
+      }
+    } else {
+      card.style.boxShadow = '';
+      const overlay = card.querySelector('.vote-overlay');
+      if (overlay) overlay.remove();
+    }
+    const selected = document.querySelectorAll('#vote-cards .vote-card.selected').length;
+    const btn = document.querySelector('#page-vote .btn-primary');
+    if (btn) btn.textContent = selected > 0 ? `👍 Submit ${selected} Vote${selected > 1 ? 's' : ''}` : '👍 Submit Votes';
+  }
+
+  // ── Randomizer ────────────────────────────────────────────────────────────
+  let spinInterval2 = null;
+  let isSpinning = false;
+
+  function resetSpin() {
+    if (spinInterval2) { clearTimeout(spinInterval2); spinInterval2 = null; }
+    isSpinning = false;
+    pendingWinner = null;
+    for (let i = 0; i < spinCount; i++) {
+      const el = document.getElementById('rcard-' + i);
+      if (el) { el.style.boxShadow = ''; el.style.opacity = '1'; el.style.transform = 'scale(1)'; }
+    }
+    document.getElementById('spin-btn-area').style.display = 'block';
+    document.getElementById('spin-winner').style.display = 'none';
+  }
+
+  function doSpin() {
+    if (isSpinning || spinCount === 0) return;
+    isSpinning = true;
+    let iter = 0;
+    const maxIter = 25 + spinCount * 2;
+    const winnerIdx = Math.floor(Math.random() * spinCount);
+    let cur = 0;
+    let delay = 80;
+
+    function tick() {
+      for (let i = 0; i < spinCount; i++) {
+        const el = document.getElementById('rcard-' + i);
+        if (!el) continue;
+        if (i === cur) {
+          el.style.boxShadow = '0 0 0 2px var(--primary)';
+          el.style.opacity = '1';
+          el.style.transform = 'scale(1.03)';
+        } else {
+          el.style.boxShadow = '';
+          el.style.opacity = '0.45';
+          el.style.transform = 'scale(0.97)';
+        }
+      }
+      cur = (cur + 1) % spinCount;
+      iter++;
+
+      if (iter < maxIter) {
+        if (iter > maxIter - 8) delay = Math.min(delay + 40, 380);
+        spinInterval2 = setTimeout(tick, delay);
+      } else {
+        for (let i = 0; i < spinCount; i++) {
+          const el = document.getElementById('rcard-' + i);
+          if (!el) continue;
+          if (i === winnerIdx) {
+            el.style.boxShadow = '0 0 0 4px var(--primary), 0 4px 16px rgba(0,0,0,0.12)';
+            el.style.opacity = '1';
+            el.style.transform = 'scale(1.05)';
+          } else {
+            el.style.opacity = '0.4';
+            el.style.transform = 'scale(0.95)';
+          }
+        }
+        const winner = fetchedRestaurants[winnerIdx];
+        pendingWinner = winner;
+        const sym = winner ? priceLevelToSymbol[winner.priceLevel] || '' : '';
+        document.getElementById('winner-name').textContent = (winner?.displayName?.text || 'Restaurant') + ' ✨';
+        document.getElementById('winner-sub').textContent  =
+          [winner?.primaryTypeDisplayName?.text, sym, winner?.rating ? '⭐ ' + winner.rating.toFixed(1) : ''].filter(Boolean).join(' • ');
+        document.getElementById('spin-btn-area').style.display = 'none';
+        document.getElementById('spin-winner').style.display = 'flex';
+        isSpinning = false;
+      }
+    }
+    tick();
+  }
+
+  // "Lock It In!" button in randomizer
+  function confirmSpin() {
+    if (pendingWinner) { setDecision(pendingWinner, 'random'); goTo('decision'); }
+  }
+</script>
+</body>
+</html>
