@@ -142,6 +142,20 @@ app.get('/api/auth/me', async (req, res) => {
   }
 });
 
+// GET /api/admin/users — list all registered users (developer/admin view)
+app.get('/api/admin/users', async (_req, res) => {
+  try {
+    const allUsers = await db
+      .select({ id: users.id, name: users.name, email: users.email, createdAt: users.createdAt })
+      .from(users)
+      .orderBy(users.createdAt);
+    res.json({ users: allUsers, total: allUsers.length });
+  } catch (err) {
+    console.error('Admin users error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 // ── Static Files ──────────────────────────────────────────────────────────────
 
 // Serve the project root (index.html, CSS, etc.)

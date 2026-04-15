@@ -180,6 +180,7 @@
   <span class="nav-demo-btn" id="nav-vote" onclick="goTo('vote')">Vote</span>
   <span class="nav-demo-btn" id="nav-randomizer" onclick="goTo('randomizer')">Randomizer</span>
   <span class="nav-demo-btn" id="nav-decision" onclick="goTo('decision')">Decision</span>
+  <span class="nav-demo-btn" id="nav-admin" onclick="goTo('admin')" style="color:var(--primary);border-left:1px solid var(--border);padding-left:1rem;margin-left:0.25rem;">Admin</span>
 </div>
 
 <!-- ===================== LANDING PAGE ===================== -->
@@ -1521,7 +1522,7 @@
     if (!e.target.closest('#page-home [style*="position:relative"]')) closeUserMenu();
   });
 
-  const pages = ['landing','signup','login','home','preferences','waiting','results','vote','randomizer','decision'];
+  const pages = ['landing','signup','login','home','preferences','waiting','results','vote','randomizer','decision','admin'];
   let currentPage = 'landing';
   updateMemberDisplays(); // initialize all count displays
 
@@ -1581,6 +1582,7 @@
       startWaitingAnimation();
     }
     if (page === 'results') fetchRestaurants();
+    if (page === 'admin') loadAdminUsers();
     if (page === 'randomizer') resetSpin();
     if (page === 'preferences') {
       const locationErr = document.getElementById('location-error');
@@ -1778,6 +1780,95 @@
   function confirmSpin() {
     if (pendingWinner) { setDecision(pendingWinner, 'random'); goTo('decision'); }
   }
+
+  // ── Admin ──────────────────────────────────────────────────────────────────
+  async function loadAdminUsers() {
+    const loadingEl = document.getElementById('admin-loading');
+    const errorEl   = document.getElementById('admin-error');
+    const tbody     = document.getElementById('admin-table-body');
+    const totalEl   = document.getElementById('admin-total');
+
+    loadingEl.style.display = 'block';
+    errorEl.style.display   = 'none';
+    tbody.innerHTML = '';
+    totalEl.textContent = '';
+
+    try {
+      const res  = await fetch('/api/admin/users');
+      const data = await res.json();
+      loadingEl.style.display = 'none';
+
+      if (!res.ok) {
+        errorEl.textContent = data.error || 'Failed to load users.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const users = data.users;
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted-fg);">No users registered yet.</td></tr>';
+      } else {
+        users.forEach(user => {
+          const row  = document.createElement('tr');
+          row.style.borderBottom = '1px solid var(--border)';
+          const date = new Date(user.createdAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+          row.innerHTML = `
+            <td style="padding:0.75rem 1rem;font-size:0.875rem;color:var(--muted-fg);">${user.id}</td>
+            <td style="padding:0.75rem 1rem;font-size:0.875rem;font-weight:500;">${user.name}</td>
+            <td style="padding:0.75rem 1rem;font-size:0.875rem;color:var(--muted-fg);">${user.email}</td>
+            <td style="padding:0.75rem 1rem;font-size:0.875rem;color:var(--muted-fg);">${date}</td>`;
+          tbody.appendChild(row);
+        });
+      }
+      totalEl.textContent = `Total: ${users.length} registered account${users.length !== 1 ? 's' : ''}`;
+    } catch (err) {
+      loadingEl.style.display = 'none';
+      errorEl.textContent = 'Network error. Make sure the server is running.';
+      errorEl.style.display = 'block';
+    }
+  }
 </script>
+
+<!-- ===================== ADMIN PAGE ===================== -->
+<div class="page" id="page-admin">
+  <nav class="nav">
+    <div style="max-width:1280px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <div style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;" onclick="goTo('landing')">
+        <div class="logo-icon"><svg width="20" height="20" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-size:1.2rem;font-weight:700;">TableVote</span>
+      </div>
+      <span style="font-size:0.875rem;font-weight:600;color:var(--primary);">Admin — Registered Users</span>
+      <button class="btn-primary" onclick="loadAdminUsers()">↻ Refresh</button>
+    </div>
+  </nav>
+  <main style="max-width:1280px;margin:0 auto;padding:2rem 1.5rem;">
+    <div style="margin-bottom:1.5rem;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:1.875rem;font-weight:700;margin-bottom:0.4rem;">Registered Accounts</h1>
+      <p style="color:var(--muted-fg);">All users stored in the database. Data is fetched live from <code style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;background:var(--muted);padding:0.1rem 0.4rem;border-radius:4px;">GET /api/admin/users</code></p>
+    </div>
+    <div id="admin-loading" style="display:none;text-align:center;padding:2rem;">
+      <div class="spinner" style="margin:0 auto 1rem;"></div>
+      <p style="color:var(--muted-fg);">Loading users…</p>
+    </div>
+    <div id="admin-error" style="display:none;color:var(--destructive);font-size:0.875rem;padding:0.75rem 1rem;background:hsla(0,84%,60%,0.07);border-radius:6px;margin-bottom:1rem;"></div>
+    <div class="card" style="overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;" id="admin-table">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);background:var(--muted);">
+            <th style="text-align:left;padding:0.75rem 1rem;font-size:0.8rem;font-weight:600;color:var(--muted-fg);">ID</th>
+            <th style="text-align:left;padding:0.75rem 1rem;font-size:0.8rem;font-weight:600;color:var(--muted-fg);">Name</th>
+            <th style="text-align:left;padding:0.75rem 1rem;font-size:0.8rem;font-weight:600;color:var(--muted-fg);">Email</th>
+            <th style="text-align:left;padding:0.75rem 1rem;font-size:0.8rem;font-weight:600;color:var(--muted-fg);">Joined</th>
+          </tr>
+        </thead>
+        <tbody id="admin-table-body">
+          <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted-fg);">Click Refresh to load users.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p id="admin-total" style="margin-top:0.75rem;font-size:0.875rem;color:var(--muted-fg);"></p>
+  </main>
+</div>
+
 </body>
 </html>
