@@ -451,7 +451,7 @@
         </div>
       </div>
     </div>
-    <div style="margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--border);">
+    <div id="admin-export-section" style="display:none;margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--border);">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
         <div>
           <h2 style="font-size:1.15rem;font-weight:600;margin-bottom:0.25rem;">Sign-Up Data</h2>
@@ -1599,6 +1599,8 @@
     goTo('landing');
   }
 
+  const ADMIN_EMAIL = 'maddiejones04@icloud.com';
+
   function updateUserDisplay() {
     if (!currentUser) return;
     const initials  = currentUser.name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -1611,6 +1613,8 @@
     if (nameEl)  nameEl.textContent  = firstName;
     if (menuEl)  menuEl.textContent  = currentUser.name;
     if (wlcmEl)  wlcmEl.textContent  = firstName;
+    const exportEl = document.getElementById('admin-export-section');
+    if (exportEl) exportEl.style.display = currentUser.email === ADMIN_EMAIL ? 'block' : 'none';
   }
 
   function toggleUserMenu() {
@@ -1748,6 +1752,7 @@
 
   // ── CSV export ─────────────────────────────────────────────────────────────
   function downloadSignupsCSV() {
+    if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
     const users = JSON.parse(localStorage.getItem('tv_users') || '[]');
     if (users.length === 0) { alert('No signups yet.'); return; }
     const rows = [['Name', 'Email']];
