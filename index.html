@@ -180,6 +180,7 @@
   <span class="nav-demo-btn" id="nav-vote" onclick="goTo('vote')">Vote</span>
   <span class="nav-demo-btn" id="nav-randomizer" onclick="goTo('randomizer')">Randomizer</span>
   <span class="nav-demo-btn" id="nav-decision" onclick="goTo('decision')">Decision</span>
+  <span class="nav-demo-btn" id="nav-restaurant" onclick="goTo('restaurant')">Restaurant Detail</span>
 </div>
 
 <!-- ===================== LANDING PAGE ===================== -->
@@ -448,6 +449,15 @@
             <span>Mar 15, 2026</span>
           </div>
         </div>
+      </div>
+    </div>
+    <div style="margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--border);">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <h2 style="font-size:1.15rem;font-weight:600;margin-bottom:0.25rem;">Sign-Up Data</h2>
+          <p style="font-size:0.875rem;color:var(--muted-fg);">Download all registered accounts as a CSV file.</p>
+        </div>
+        <button class="btn-outline" onclick="downloadSignupsCSV()" style="display:flex;align-items:center;gap:0.5rem;">⬇ Export Signups CSV</button>
       </div>
     </div>
   </main>
@@ -801,6 +811,88 @@
   </main>
 </div>
 
+<!-- ===================== RESTAURANT DETAIL PAGE ===================== -->
+<div class="page" id="page-restaurant">
+  <nav class="nav">
+    <div style="max-width:896px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <button class="btn-ghost" onclick="goTo('results')">← Back to Results</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon-sm"><svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-weight:600;">TableVote</span>
+      </div>
+      <div></div>
+    </div>
+  </nav>
+  <main style="max-width:896px;margin:0 auto;padding:2rem 1.5rem;">
+
+    <!-- Photo gallery -->
+    <div id="rest-photos" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;border-radius:12px;overflow:hidden;margin-bottom:1.75rem;min-height:220px;background:linear-gradient(135deg,hsla(16,85%,58%,0.15),hsla(45,93%,55%,0.15));"></div>
+
+    <!-- Name + meta -->
+    <div style="margin-bottom:1.5rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div>
+          <h1 id="rest-name" style="font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;margin-bottom:0.5rem;">—</h1>
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <span class="badge badge-secondary" id="rest-cuisine"></span>
+            <span class="badge badge-outline" id="rest-price"></span>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:2rem;font-weight:700;color:var(--primary);" id="rest-rating">—</div>
+          <div style="font-size:0.875rem;color:var(--muted-fg);" id="rest-review-count"></div>
+          <div style="font-size:0.875rem;color:var(--muted-fg);" id="rest-distance"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+      <div class="card" style="padding:1.25rem;">
+        <h3 style="font-size:0.875rem;font-weight:600;color:var(--muted-fg);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">📍 Location</h3>
+        <p id="rest-address" style="font-size:0.925rem;margin-bottom:0.75rem;line-height:1.5;"></p>
+        <a id="rest-directions" target="_blank" style="font-size:0.875rem;color:var(--primary);font-weight:500;text-decoration:none;cursor:pointer;">Get Directions →</a>
+      </div>
+      <div class="card" style="padding:1.25rem;">
+        <h3 style="font-size:0.875rem;font-weight:600;color:var(--muted-fg);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;">📞 Contact</h3>
+        <div id="rest-phone-row" style="margin-bottom:0.5rem;display:none;">
+          <a id="rest-phone" style="font-size:0.925rem;color:inherit;text-decoration:none;"></a>
+        </div>
+        <div id="rest-website-row" style="display:none;">
+          <a id="rest-website" target="_blank" style="font-size:0.875rem;color:var(--primary);font-weight:500;text-decoration:none;word-break:break-all;"></a>
+        </div>
+        <div id="rest-no-contact" style="font-size:0.875rem;color:var(--muted-fg);">No contact info available</div>
+      </div>
+    </div>
+
+    <!-- Menu link (if available) -->
+    <div id="rest-menu-row" style="display:none;margin-bottom:1.5rem;">
+      <div class="card" style="padding:1.25rem;background:hsla(16,85%,58%,0.04);border-color:hsla(16,85%,58%,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+          <div>
+            <h3 style="font-size:1rem;font-weight:600;margin-bottom:0.2rem;">🍽️ Menu</h3>
+            <p style="font-size:0.875rem;color:var(--muted-fg);">View the full menu on the restaurant's website.</p>
+          </div>
+          <a id="rest-menu-link" target="_blank" class="btn-primary" style="text-decoration:none;">View Menu →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews -->
+    <div id="rest-reviews-section" style="margin-bottom:2rem;">
+      <h2 style="font-size:1.15rem;font-weight:600;margin-bottom:1rem;">Reviews</h2>
+      <div id="rest-reviews-list" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+      <p id="rest-no-reviews" style="color:var(--muted-fg);font-size:0.875rem;display:none;">No reviews available.</p>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;gap:0.75rem;padding-top:1.5rem;border-top:1px solid var(--border);">
+      <button class="btn-primary" style="flex:1;justify-content:center;padding:0.875rem;" onclick="goTo('vote')">🗳️ Go to Vote</button>
+      <button class="btn-outline" style="justify-content:center;padding:0.875rem;" onclick="goTo('results')">← Back to Results</button>
+    </div>
+  </main>
+</div>
+
 <!-- ===================== SIGN UP PAGE ===================== -->
 <div class="page" id="page-signup">
   <nav class="nav">
@@ -1003,6 +1095,8 @@
             'places.internationalPhoneNumber',
             'places.location',
             'places.photos',
+            'places.websiteUri',
+            'places.reviews',
           ].join(','),
         },
         body: JSON.stringify(body),
@@ -1086,6 +1180,7 @@
               ${sym  ? `<span>💵 ${sym}</span>`  : ''}
             </div>
             <p style="font-size:0.875rem;color:var(--muted-fg);">${place.formattedAddress || ''}</p>
+            <button onclick="openRestaurant(${i})" style="margin-top:0.75rem;background:none;border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.85rem;font-size:0.8rem;font-weight:500;cursor:pointer;color:var(--primary);" onmouseover="this.style.background='var(--accent)'" onmouseout="this.style.background='none'">View Details →</button>
           </div>
         </div>`;
       list.appendChild(card);
@@ -1410,7 +1505,7 @@
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  const PROTECTED_PAGES = ['home','preferences','waiting','results','vote','randomizer','decision'];
+  const PROTECTED_PAGES = ['home','preferences','waiting','results','vote','randomizer','decision','restaurant'];
   let currentUser = null;
 
   async function hashPassword(password) {
@@ -1541,7 +1636,133 @@
     }
   })();
 
-  const pages = ['landing','signup','login','home','preferences','waiting','results','vote','randomizer','decision'];
+  // ── Restaurant detail ──────────────────────────────────────────────────────
+  let currentRestaurantIdx = null;
+
+  function openRestaurant(idx) {
+    currentRestaurantIdx = idx;
+    renderRestaurantDetail(fetchedRestaurants[idx]);
+    goTo('restaurant');
+  }
+
+  function renderRestaurantDetail(place) {
+    if (!place) return;
+
+    // Photos
+    const photosEl = document.getElementById('rest-photos');
+    if (photosEl) {
+      photosEl.innerHTML = '';
+      const photoNames = (place.photos || []).slice(0, 5);
+      if (photoNames.length > 0) {
+        photoNames.forEach((p, i) => {
+          const url = `https://places.googleapis.com/v1/${p.name}/media?maxWidthPx=600&key=${PLACES_API_KEY}`;
+          const img = document.createElement('div');
+          img.style.cssText = `background:linear-gradient(135deg,hsla(16,85%,58%,0.15),hsla(45,93%,55%,0.15));overflow:hidden;${i === 0 ? 'grid-row:span 2;' : ''}`;
+          img.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;min-height:160px;" onerror="this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;font-size:3rem;\\'>🍽️</div>'" />`;
+          photosEl.appendChild(img);
+        });
+      } else {
+        photosEl.innerHTML = '<div style="grid-column:span 3;display:flex;align-items:center;justify-content:center;font-size:5rem;">🍽️</div>';
+      }
+    }
+
+    // Name, cuisine, price
+    const sym = priceLevelToSymbol[place.priceLevel] || '';
+    document.getElementById('rest-name').textContent        = place.displayName?.text || 'Restaurant';
+    document.getElementById('rest-cuisine').textContent     = place.primaryTypeDisplayName?.text || 'Restaurant';
+    document.getElementById('rest-price').textContent       = sym || '—';
+    document.getElementById('rest-rating').textContent      = place.rating ? '⭐ ' + place.rating.toFixed(1) : '—';
+    document.getElementById('rest-review-count').textContent = place.userRatingCount ? fmtReviews(place.userRatingCount) + ' reviews' : '';
+    document.getElementById('rest-distance').textContent    = place.distanceMi != null ? place.distanceMi.toFixed(1) + ' mi away' : '';
+
+    // Address + directions
+    const addr = place.formattedAddress || '';
+    document.getElementById('rest-address').textContent = addr || 'Address unavailable';
+    const dirsEl = document.getElementById('rest-directions');
+    if (dirsEl) dirsEl.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr || place.displayName?.text || '')}`;
+
+    // Phone
+    const phoneRow = document.getElementById('rest-phone-row');
+    const phoneEl  = document.getElementById('rest-phone');
+    if (place.internationalPhoneNumber) {
+      phoneEl.textContent = place.internationalPhoneNumber;
+      phoneEl.href = 'tel:' + place.internationalPhoneNumber;
+      phoneRow.style.display = 'block';
+    } else {
+      phoneRow.style.display = 'none';
+    }
+
+    // Website
+    const webRow = document.getElementById('rest-website-row');
+    const webEl  = document.getElementById('rest-website');
+    const noContact = document.getElementById('rest-no-contact');
+    if (place.websiteUri) {
+      const display = place.websiteUri.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+      webEl.textContent = display;
+      webEl.href = place.websiteUri;
+      webRow.style.display = 'block';
+    } else {
+      webRow.style.display = 'none';
+    }
+    noContact.style.display = (!place.internationalPhoneNumber && !place.websiteUri) ? 'block' : 'none';
+
+    // Menu link (same as website if available)
+    const menuRow  = document.getElementById('rest-menu-row');
+    const menuLink = document.getElementById('rest-menu-link');
+    if (place.websiteUri) {
+      menuLink.href = place.websiteUri;
+      menuRow.style.display = 'block';
+    } else {
+      menuRow.style.display = 'none';
+    }
+
+    // Reviews
+    const reviewsList = document.getElementById('rest-reviews-list');
+    const noReviews   = document.getElementById('rest-no-reviews');
+    reviewsList.innerHTML = '';
+    const reviews = place.reviews || [];
+    if (reviews.length > 0) {
+      noReviews.style.display = 'none';
+      reviews.forEach(r => {
+        const stars = '⭐'.repeat(Math.round(r.rating || 0));
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.style.padding = '1.25rem';
+        div.innerHTML = `
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">
+              ${(r.authorAttribution?.displayName || '?').charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p style="font-weight:600;font-size:0.9rem;">${r.authorAttribution?.displayName || 'Anonymous'}</p>
+              <p style="font-size:0.8rem;color:var(--muted-fg);">${stars} · ${r.relativePublishTimeDescription || ''}</p>
+            </div>
+          </div>
+          <p style="font-size:0.875rem;line-height:1.6;color:var(--foreground);">${r.text?.text || ''}</p>`;
+        reviewsList.appendChild(div);
+      });
+    } else {
+      noReviews.style.display = 'block';
+    }
+  }
+
+  // ── CSV export ─────────────────────────────────────────────────────────────
+  function downloadSignupsCSV() {
+    const users = JSON.parse(localStorage.getItem('tv_users') || '[]');
+    if (users.length === 0) { alert('No signups yet.'); return; }
+    const rows = [['Name', 'Email']];
+    users.forEach(u => rows.push([`"${u.name.replace(/"/g, '""')}"`, `"${u.email.replace(/"/g, '""')}"`]));
+    const csv     = rows.map(r => r.join(',')).join('\n');
+    const blob    = new Blob([csv], { type: 'text/csv' });
+    const url     = URL.createObjectURL(blob);
+    const a       = document.createElement('a');
+    a.href        = url;
+    a.download    = 'tablevote-signups.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const pages = ['landing','signup','login','home','preferences','waiting','results','vote','randomizer','decision','restaurant'];
   // If already logged in, start on home; otherwise start on landing
   let currentPage = currentUser ? 'home' : 'landing';
   if (currentUser) {
