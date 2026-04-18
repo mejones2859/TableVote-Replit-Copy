@@ -1004,6 +1004,9 @@
             'places.internationalPhoneNumber',
             'places.location',
             'places.photos',
+            'places.websiteUri',
+            'places.googleMapsUri',
+            'places.reviews',
           ].join(','),
         },
         body: JSON.stringify(body),
@@ -1061,6 +1064,8 @@
 
       const card = document.createElement('div');
       card.className = 'restaurant-card result-card' + (isTop ? ' top-pick' : '');
+      card.style.cursor = 'pointer';
+      card.onclick = () => showRestaurantDetail(place);
       card.innerHTML = `
         <div style="display:flex;flex-direction:row;">
           <div style="position:relative;width:192px;min-height:130px;background:linear-gradient(135deg,hsla(16,85%,58%,0.2),hsla(45,93%,55%,0.2));display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
@@ -1212,6 +1217,143 @@
           setTimeout(() => shareBtn.textContent = '📤 Share Result', 2000);
         }
       };
+    }
+  }
+
+  // ── Restaurant Detail ──────────────────────────────────────────────────────
+  let selectedRestaurant = null;
+
+  function showRestaurantDetail(restaurant) {
+    selectedRestaurant = restaurant;
+    goTo('restaurant');
+  }
+
+  function loadRestaurantDetail() {
+    const r = selectedRestaurant;
+    if (!r) return;
+
+    const sym   = priceLevelToSymbol[r.priceLevel] || '';
+    const dist  = r.distanceMi != null ? r.distanceMi.toFixed(1) + ' mi away' : '';
+    const score = r.matchScore ?? calcMatchScore(r);
+
+    // Hero image
+    const heroImg = document.getElementById('detail-hero-img');
+    const heroWrap = document.getElementById('detail-hero-wrap');
+    const firstPhoto = r.photos?.[0];
+    if (heroImg && firstPhoto) {
+      heroImg.src = `https://places.googleapis.com/v1/${firstPhoto.name}/media?maxWidthPx=1200&key=${PLACES_API_KEY}`;
+      heroImg.style.display = 'block';
+    } else if (heroImg) {
+      heroImg.style.display = 'none';
+      if (heroWrap) heroWrap.style.background = 'linear-gradient(135deg,hsla(16,85%,58%,0.2),hsla(45,93%,55%,0.2))';
+    }
+
+    // Name + badges
+    document.getElementById('detail-name').textContent = r.displayName?.text || 'Restaurant';
+    document.getElementById('detail-cuisine-badge').textContent = r.primaryTypeDisplayName?.text || '';
+    document.getElementById('detail-price-badge').textContent   = sym;
+    document.getElementById('detail-rating-val').textContent    = r.rating?.toFixed(1) ?? '?';
+    document.getElementById('detail-reviews-val').textContent   = `(${fmtReviews(r.userRatingCount)} reviews)`;
+    document.getElementById('detail-dist-val').textContent      = dist;
+    document.getElementById('detail-score-val').textContent     = score + '% match';
+    document.getElementById('detail-score-val').style.color     = scoreColor(score);
+
+    // Photo strip
+    const strip = document.getElementById('detail-photo-strip');
+    strip.innerHTML = '';
+    (r.photos || []).slice(0, 8).forEach((ph, i) => {
+      const img = document.createElement('img');
+      img.src = `https://places.googleapis.com/v1/${ph.name}/media?maxWidthPx=300&key=${PLACES_API_KEY}`;
+      img.style.cssText = 'height:100px;width:150px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer;';
+      img.onclick = () => { if (heroImg) { heroImg.src = img.src.replace('maxWidthPx=300','maxWidthPx=1200'); } };
+      img.onerror = () => img.remove();
+      strip.appendChild(img);
+    });
+
+    // Address
+    const addrEl = document.getElementById('detail-address-text');
+    if (addrEl) addrEl.textContent = r.formattedAddress || '';
+
+    // Phone
+    const phoneRow  = document.getElementById('detail-phone-row');
+    const phoneLink = document.getElementById('detail-phone-link');
+    if (r.internationalPhoneNumber) {
+      phoneLink.textContent = r.internationalPhoneNumber;
+      phoneLink.href        = 'tel:' + r.internationalPhoneNumber;
+      phoneRow.style.display = 'flex';
+    } else {
+      phoneRow.style.display = 'none';
+    }
+
+    // Website / Menu
+    const webRow  = document.getElementById('detail-web-row');
+    const webLink = document.getElementById('detail-web-link');
+    if (r.websiteUri) {
+      webLink.href      = r.websiteUri;
+      webLink.textContent = r.websiteUri.replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
+      webRow.style.display = 'flex';
+    } else {
+      webRow.style.display = 'none';
+    }
+
+    // Directions button
+    const dirsBtn = document.getElementById('detail-directions-btn');
+    if (dirsBtn) {
+      const addr = encodeURIComponent(r.formattedAddress || r.displayName?.text || '');
+      dirsBtn.onclick = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${addr}`, '_blank');
+    }
+
+    // Google Maps button
+    const mapsBtn = document.getElementById('detail-maps-btn');
+    if (mapsBtn && r.googleMapsUri) {
+      mapsBtn.onclick = () => window.open(r.googleMapsUri, '_blank');
+      mapsBtn.style.display = 'flex';
+    } else if (mapsBtn) {
+      mapsBtn.style.display = 'none';
+    }
+
+    // Call button
+    const callBtn = document.getElementById('detail-call-btn');
+    if (callBtn) {
+      if (r.internationalPhoneNumber) {
+        callBtn.onclick = () => window.open('tel:' + r.internationalPhoneNumber);
+        callBtn.style.display = 'flex';
+      } else {
+        callBtn.style.display = 'none';
+      }
+    }
+
+    // Menu / Website button
+    const menuBtn = document.getElementById('detail-menu-btn');
+    if (menuBtn) {
+      if (r.websiteUri) {
+        menuBtn.onclick = () => window.open(r.websiteUri, '_blank');
+        menuBtn.style.display = 'flex';
+      } else {
+        menuBtn.style.display = 'none';
+      }
+    }
+
+    // Reviews
+    const reviewsWrap = document.getElementById('detail-reviews-wrap');
+    reviewsWrap.innerHTML = '';
+    const reviews = r.reviews || [];
+    if (reviews.length === 0) {
+      reviewsWrap.innerHTML = '<p style="color:var(--muted-fg);font-size:0.875rem;">No reviews available.</p>';
+    } else {
+      reviews.slice(0, 5).forEach(rev => {
+        const stars = '⭐'.repeat(Math.round(rev.rating || 0));
+        const div = document.createElement('div');
+        div.style.cssText = 'padding:1.25rem;border-bottom:1px solid var(--border);';
+        div.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <span style="font-weight:600;font-size:0.875rem;">${rev.authorAttribution?.displayName || 'Anonymous'}</span>
+            <span style="font-size:0.8rem;color:var(--muted-fg);">${rev.relativePublishTimeDescription || ''}</span>
+          </div>
+          <div style="margin-bottom:0.5rem;font-size:0.875rem;">${stars} <span style="color:var(--muted-fg);">${rev.rating}/5</span></div>
+          <p style="font-size:0.875rem;color:var(--foreground);line-height:1.6;">${rev.text?.text || ''}</p>`;
+        reviewsWrap.appendChild(div);
+      });
     }
   }
 
@@ -1522,7 +1664,7 @@
     if (!e.target.closest('#page-home [style*="position:relative"]')) closeUserMenu();
   });
 
-  const pages = ['landing','signup','login','home','preferences','waiting','results','vote','randomizer','decision','admin'];
+  const pages = ['landing','signup','login','home','preferences','waiting','results','vote','randomizer','decision','admin','restaurant'];
   let currentPage = 'landing';
   updateMemberDisplays(); // initialize all count displays
 
@@ -1582,6 +1724,7 @@
       startWaitingAnimation();
     }
     if (page === 'results') fetchRestaurants();
+    if (page === 'restaurant') loadRestaurantDetail();
     if (page === 'admin') loadAdminUsers();
     if (page === 'randomizer') resetSpin();
     if (page === 'preferences') {
@@ -1782,6 +1925,29 @@
   }
 
   // ── Admin ──────────────────────────────────────────────────────────────────
+  let cachedAdminUsers = [];
+
+  function downloadUsersCSV() {
+    if (!cachedAdminUsers.length) { alert('Click Refresh first to load users.'); return; }
+    const header = ['ID', 'Name', 'Email', 'Joined'];
+    const rows = cachedAdminUsers.map(u => [
+      u.id,
+      `"${String(u.name).replace(/"/g, '""')}"`,
+      `"${String(u.email).replace(/"/g, '""')}"`,
+      `"${new Date(u.createdAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' })}"`,
+    ]);
+    const csv = [header, ...rows].map(r => r.join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `tablevote-signups-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   async function loadAdminUsers() {
     const loadingEl = document.getElementById('admin-loading');
     const errorEl   = document.getElementById('admin-error');
@@ -1805,6 +1971,7 @@
       }
 
       const users = data.users;
+      cachedAdminUsers = users;
       if (users.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted-fg);">No users registered yet.</td></tr>';
       } else {
@@ -1842,9 +2009,12 @@
     </div>
   </nav>
   <main style="max-width:1280px;margin:0 auto;padding:2rem 1.5rem;">
-    <div style="margin-bottom:1.5rem;">
-      <h1 style="font-family:'Playfair Display',serif;font-size:1.875rem;font-weight:700;margin-bottom:0.4rem;">Registered Accounts</h1>
-      <p style="color:var(--muted-fg);">All users stored in the database. Data is fetched live from <code style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;background:var(--muted);padding:0.1rem 0.4rem;border-radius:4px;">GET /api/admin/users</code></p>
+    <div style="margin-bottom:1.5rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+      <div>
+        <h1 style="font-family:'Playfair Display',serif;font-size:1.875rem;font-weight:700;margin-bottom:0.4rem;">Registered Accounts</h1>
+        <p style="color:var(--muted-fg);">All users stored in the database. Fetched live from <code style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;background:var(--muted);padding:0.1rem 0.4rem;border-radius:4px;">GET /api/admin/users</code></p>
+      </div>
+      <button class="btn-outline" onclick="downloadUsersCSV()" id="csv-btn" style="white-space:nowrap;">⬇ Export CSV</button>
     </div>
     <div id="admin-loading" style="display:none;text-align:center;padding:2rem;">
       <div class="spinner" style="margin:0 auto 1rem;"></div>
@@ -1867,6 +2037,87 @@
       </table>
     </div>
     <p id="admin-total" style="margin-top:0.75rem;font-size:0.875rem;color:var(--muted-fg);"></p>
+  </main>
+</div>
+
+<!-- ===================== RESTAURANT DETAIL PAGE ===================== -->
+<div class="page" id="page-restaurant">
+  <nav class="nav">
+    <div style="max-width:896px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <button class="btn-ghost" onclick="goTo('results')">← Back to Results</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="logo-icon-sm"><svg width="16" height="16" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <span style="font-weight:600;">TableVote</span>
+      </div>
+      <div></div>
+    </div>
+  </nav>
+
+  <!-- Hero photo -->
+  <div id="detail-hero-wrap" style="width:100%;height:300px;overflow:hidden;background:linear-gradient(135deg,hsla(16,85%,58%,0.15),hsla(45,93%,55%,0.15));position:relative;">
+    <img id="detail-hero-img" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'" />
+    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.35),transparent);pointer-events:none;"></div>
+  </div>
+
+  <main style="max-width:896px;margin:0 auto;padding:2rem 1.5rem;">
+
+    <!-- Name + badges -->
+    <div style="margin-bottom:1.5rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+        <h1 id="detail-name" style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;"></h1>
+        <span id="detail-score-val" style="font-size:1.5rem;font-weight:700;white-space:nowrap;"></span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:0.5rem;">
+        <span class="badge badge-secondary" id="detail-cuisine-badge"></span>
+        <span class="badge badge-outline" id="detail-price-badge"></span>
+        <span style="display:flex;align-items:center;gap:0.25rem;font-weight:600;">⭐ <span id="detail-rating-val"></span></span>
+        <span style="color:var(--muted-fg);font-size:0.875rem;" id="detail-reviews-val"></span>
+        <span style="color:var(--muted-fg);font-size:0.875rem;" id="detail-dist-val"></span>
+      </div>
+    </div>
+
+    <!-- Photo strip -->
+    <div id="detail-photo-strip" style="display:flex;gap:0.5rem;overflow-x:auto;padding-bottom:0.5rem;margin-bottom:1.5rem;scrollbar-width:thin;"></div>
+
+    <!-- Info + Actions -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+      <!-- Contact & Location -->
+      <div class="card" style="padding:1.5rem;">
+        <h3 style="font-size:1rem;font-weight:600;margin-bottom:1rem;">Contact &amp; Location</h3>
+        <div style="display:flex;flex-direction:column;gap:0.875rem;">
+          <div style="display:flex;align-items:flex-start;gap:0.75rem;">
+            <span style="margin-top:2px;flex-shrink:0;">📍</span>
+            <p id="detail-address-text" style="font-size:0.875rem;line-height:1.5;"></p>
+          </div>
+          <div id="detail-phone-row" style="display:flex;align-items:center;gap:0.75rem;">
+            <span style="flex-shrink:0;">📞</span>
+            <a id="detail-phone-link" style="font-size:0.875rem;font-weight:500;color:inherit;text-decoration:none;"></a>
+          </div>
+          <div id="detail-web-row" style="display:flex;align-items:center;gap:0.75rem;">
+            <span style="flex-shrink:0;">🌐</span>
+            <a id="detail-web-link" target="_blank" rel="noopener" style="font-size:0.875rem;font-weight:500;color:var(--primary);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;"></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <button id="detail-directions-btn" class="btn-primary" style="justify-content:center;padding:0.875rem;font-size:0.95rem;">🧭 Get Directions</button>
+        <button id="detail-maps-btn" class="btn-outline" style="justify-content:center;padding:0.875rem;font-size:0.95rem;">🗺 View on Google Maps</button>
+        <button id="detail-call-btn" class="btn-outline" style="justify-content:center;padding:0.875rem;font-size:0.95rem;">📞 Call Restaurant</button>
+        <button id="detail-menu-btn" class="btn-outline" style="justify-content:center;padding:0.875rem;font-size:0.95rem;">🍽 Website / Menu</button>
+        <button class="btn-outline" style="justify-content:center;padding:0.875rem;font-size:0.95rem;" onclick="goTo('vote')">🗳 Vote for This Place</button>
+      </div>
+    </div>
+
+    <!-- Reviews -->
+    <div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;margin-bottom:1rem;">Reviews</h2>
+      <div class="card" style="overflow:hidden;">
+        <div id="detail-reviews-wrap"></div>
+      </div>
+    </div>
+
   </main>
 </div>
 
